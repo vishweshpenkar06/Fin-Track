@@ -4,20 +4,13 @@ import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { expense, budget, income, user } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
-import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
-
-async function getUserId() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) throw new Error('Unauthorized')
-  return session.user.id
-}
+import { getUserId } from '@/lib/auth-utils'
 
 export async function getCurrentUser() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) throw new Error('Unauthorized')
-  const [row] = await db.select().from(user).where(eq(user.id, session.user.id)).limit(1)
-  return row ?? session.user
+  const userId = await getUserId()
+  const [row] = await db.select().from(user).where(eq(user.id, userId)).limit(1)
+  return row
 }
 
 export async function updateUserCurrency(currency: string) {
@@ -30,7 +23,7 @@ export async function updateUserCurrency(currency: string) {
 
 export async function updateUserName(name: string) {
   if (!name.trim()) throw new Error('Name is required')
-  const userId = await getUserId()
+  const { headers } = await import('next/headers')
   await auth.api.updateUser({ body: { name: name.trim() }, headers: await headers() })
   revalidatePath('/dashboard')
   revalidatePath('/settings')
@@ -62,6 +55,9 @@ export async function deleteAllUserData() {
     await db.delete(income).where(eq(income.userId, userId))
 
     revalidatePath('/dashboard')
+    revalidatePath('/expenses')
+    revalidatePath('/budgets')
+    revalidatePath('/reports')
     return { success: true }
   } catch (error) {
     console.error('Failed to delete user data:', error)
@@ -71,6 +67,7 @@ export async function deleteAllUserData() {
 
 export async function signOut() {
   try {
+    const { headers } = await import('next/headers')
     await auth.api.signOut({ headers: await headers() })
     revalidatePath('/')
     return { success: true }

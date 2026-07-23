@@ -1,12 +1,13 @@
 'use server'
 
 import { z } from 'zod'
-import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { income } from '@/lib/db/schema'
 import { and, eq, desc, gte, lte } from 'drizzle-orm'
-import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
+import { getUserId } from '@/lib/auth-utils'
+import { formatLocalDate, getCurrentMonth } from '@/lib/date-utils'
+import { endOfMonth, parseISO } from 'date-fns'
 
 const addIncomeSchema = z.object({
   amount: z.number().positive('Amount must be a positive number'),
@@ -22,25 +23,19 @@ const updateIncomeSchema = z.object({
   description: z.string().max(500, 'Description must be 500 characters or fewer').optional(),
 })
 
-async function getUserId() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) throw new Error('Unauthorized')
-  return session.user.id
-}
-
 export async function getIncome(filters?: { startDate?: string; endDate?: string }) {
   const userId = await getUserId()
-  
+
   const conditions = [eq(income.userId, userId)]
-  
+
   if (filters?.startDate) {
     conditions.push(gte(income.date, filters.startDate))
   }
-  
+
   if (filters?.endDate) {
     conditions.push(lte(income.date, filters.endDate))
   }
-  
+
   return db
     .select()
     .from(income)
@@ -76,6 +71,7 @@ export async function addIncome(data: {
   })
 
   revalidatePath('/dashboard')
+  revalidatePath('/reports')
   return { id }
 }
 
@@ -107,36 +103,36 @@ export async function updateIncome(
     .where(and(eq(income.id, id), eq(income.userId, userId)))
 
   revalidatePath('/dashboard')
+  revalidatePath('/reports')
 }
 
 export async function deleteIncome(id: string) {
   const userId = await getUserId()
-  
+
   await db.delete(income).where(and(eq(income.id, id), eq(income.userId, userId)))
-  
+
   revalidatePath('/dashboard')
+  revalidatePath('/reports')
 }
 
 export async function getTotalIncome(month?: string) {
   const userId = await getUserId()
-  
-  const conditions = [eq(income.userId, userId)]
-  
-  if (month) {
-    const startDate = `${month}-01`
-    const endDate = new Date()
-    endDate.setMonth(endDate.getMonth() + 1)
-    const endDateStr = endDate.toISOString().split('T')[0]
-    
-    conditions.push(gte(income.date, startDate))
-    conditions.push(lte(income.date, endDateStr))
-  }
-  
+  const targetMonth = month ?? getCurrentMonth()
+
+  const startDate = `${targetMonth}-01`
+  const endDate = formatLocalDate(endOfMonth(parseISO(startDate)))
+
   const incomes = await db
     .select()
     .from(income)
-    .where(and(...conditions))
+    .where(
+      and(
+        eq(income.userId, userId),
+        gte(income.date, startDate),
+        lte(income.date, endDate)
+      )
+    )
   const total = incomes.reduce((sum, inc) => sum + parseFloat(inc.amount), 0)
-  
+
   return total
 }

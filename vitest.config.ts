@@ -6,12 +6,12 @@ export default defineConfig({
     globals: true,
     environment: 'happy-dom',
     setupFiles: ['./vitest.setup.ts'],
-    exclude: ['node_modules', '.next', 'e2e', 'dist'],
+    exclude: ['node_modules/**', '.next/**', 'e2e/**', 'dist/**', '.mimocode/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       include: ['app/actions/**/*.ts', 'lib/**/*.ts'],
-      exclude: ['node_modules', '.next', 'e2e'],
+      exclude: ['node_modules/**', '.next/**', 'e2e/**', '.mimocode/**'],
     },
   },
   resolve: {

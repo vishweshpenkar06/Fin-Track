@@ -9,17 +9,20 @@ import { getExpenses } from '@/app/actions/expenses'
 import { getBudgets } from '@/app/actions/budgets'
 import { getIncome, getTotalIncome } from '@/app/actions/income'
 import { generateInsights } from '@/app/actions/insights'
+import { getCurrentMonth, formatLocalDate } from '@/lib/date-utils'
+import { startOfMonth } from 'date-fns'
 
 export default async function DashboardPage() {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session?.user) redirect('/login')
 
-  const currentMonth = new Date().toISOString().split('T')[0].slice(0, 7)
+  const currentMonth = getCurrentMonth()
+  const monthStart = formatLocalDate(startOfMonth(new Date()))
 
-  // Fetch real data
-  const expenses = await getExpenses()
+  // Fetch data scoped to current month for totals, recent for transactions
+  const expenses = await getExpenses({ startDate: monthStart })
   const budgets = await getBudgets(currentMonth)
-  const incomes = await getIncome()
+  const incomes = await getIncome({ startDate: monthStart })
   const totalIncome = await getTotalIncome(currentMonth)
   const insights = await generateInsights()
 

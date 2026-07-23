@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Plus, Edit2, Trash2, TrendingUp } from 'lucide-react'
 import { getBudgets, addBudget, updateBudget, deleteBudget } from '@/app/actions/budgets'
 import { CATEGORIES } from '@/lib/categories'
+import { getCurrentMonth } from '@/lib/date-utils'
 
 function getBudgetStatus(spent: number, limit: number) {
   const percentage = (spent / limit) * 100
@@ -43,7 +44,7 @@ export default function BudgetsPage() {
   const loadBudgets = async () => {
     try {
       setLoading(true)
-      const currentMonth = new Date().toISOString().slice(0, 7)
+      const currentMonth = getCurrentMonth()
       const data = await getBudgets(currentMonth)
       setBudgets(data)
     } catch (error) {
@@ -57,7 +58,7 @@ export default function BudgetsPage() {
     if (!formData.limit || !formData.category) return
 
     try {
-      const currentMonth = new Date().toISOString().slice(0, 7)
+      const currentMonth = getCurrentMonth()
 
       if (editingId) {
         await updateBudget(editingId, {

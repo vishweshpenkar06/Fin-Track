@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react'
 import { Bell, Lock, Download, Trash2, LogOut, User, Loader2, AlertCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { getCurrentUser, deleteAllUserData, updateNotificationPreferences, updateUserName } from '@/app/actions/settings'
+import { getExpenses } from '@/app/actions/expenses'
+import { getBudgets } from '@/app/actions/budgets'
+import { getIncome } from '@/app/actions/income'
 import { authClient } from '@/lib/auth-client'
 
 export default function SettingsPage() {
@@ -66,17 +69,33 @@ export default function SettingsPage() {
     }
   }
 
-  const handleExportData = () => {
-    const data = { user, exportDate: new Date().toISOString() }
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'fintrack-data.json'
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+  const handleExportData = async () => {
+    try {
+      const [expenses, budgets, incomes] = await Promise.all([
+        getExpenses(),
+        getBudgets(),
+        getIncome(),
+      ])
+      const data = {
+        user,
+        expenses,
+        budgets,
+        incomes,
+        exportDate: new Date().toISOString(),
+      }
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'fintrack-data.json'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      setError('Failed to export data')
+      console.error('Export error:', err)
+    }
   }
 
   const handleDeleteData = async () => {

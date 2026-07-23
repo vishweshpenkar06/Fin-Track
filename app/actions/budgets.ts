@@ -1,14 +1,14 @@
 'use server'
 
 import { z } from 'zod'
-import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { budget, expense } from '@/lib/db/schema'
-import { and, eq, desc, gte, lte } from 'drizzle-orm'
-import { headers } from 'next/headers'
+import { and, eq, desc, gte, lte, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { endOfMonth, parseISO } from 'date-fns'
 import { CATEGORIES } from '@/lib/categories'
+import { getUserId } from '@/lib/auth-utils'
+import { formatLocalDate } from '@/lib/date-utils'
 
 const BUDGET_CATEGORIES = CATEGORIES.filter(c => c !== 'Income') as unknown as [string, ...string[]]
 
@@ -24,61 +24,50 @@ const updateBudgetSchema = z.object({
   alerts: z.boolean().optional(),
 })
 
-function formatLocalDate(date: Date): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-async function getUserId() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) throw new Error('Unauthorized')
-  return session.user.id
-}
-
 export async function getBudgets(month?: string) {
   const userId = await getUserId()
-  
-  const conditions = [eq(budget.userId, userId)]
+
+  const budgetConditions = [eq(budget.userId, userId)]
   if (month) {
-    conditions.push(eq(budget.month, month))
+    budgetConditions.push(eq(budget.month, month))
   }
-  
+
   const budgets = await db
     .select()
     .from(budget)
-    .where(and(...conditions))
+    .where(and(...budgetConditions))
     .orderBy(desc(budget.createdAt))
-  
-  // Calculate spent for each budget
-  const withSpent = await Promise.all(
-    budgets.map(async (b) => {
-      const monthStart = `${b.month}-01`
-      const monthEnd = formatLocalDate(endOfMonth(parseISO(monthStart)))
 
-      const expenses = await db
-        .select()
-        .from(expense)
-        .where(
-          and(
-            eq(expense.userId, userId),
-            eq(expense.category, b.category),
-            gte(expense.date, monthStart),
-            lte(expense.date, monthEnd)
-          )
-        )
+  if (budgets.length === 0) return []
 
-      const spent = expenses.reduce((sum, e) => sum + parseFloat(e.amount), 0)
+  // Single grouped query instead of N+1
+  const monthStart = `${budgets[0].month}-01`
+  const monthEnd = formatLocalDate(endOfMonth(parseISO(monthStart)))
 
-      return {
-        ...b,
-        spent: spent.toString(),
-      }
+  const spentResults = await db
+    .select({
+      category: expense.category,
+      spent: sql<string>`sum(${expense.amount}::numeric)`,
     })
-  )
-  
-  return withSpent
+    .from(expense)
+    .where(
+      and(
+        eq(expense.userId, userId),
+        gte(expense.date, monthStart),
+        lte(expense.date, monthEnd)
+      )
+    )
+    .groupBy(expense.category)
+
+  const spentByCategory: Record<string, string> = {}
+  for (const row of spentResults) {
+    spentByCategory[row.category] = row.spent
+  }
+
+  return budgets.map((b) => ({
+    ...b,
+    spent: spentByCategory[b.category] ?? '0',
+  }))
 }
 
 export async function addBudget(data: {
@@ -145,9 +134,9 @@ export async function updateBudget(
 
 export async function deleteBudget(id: string) {
   const userId = await getUserId()
-  
+
   await db.delete(budget).where(and(eq(budget.id, id), eq(budget.userId, userId)))
-  
+
   revalidatePath('/budgets')
   revalidatePath('/dashboard')
 }

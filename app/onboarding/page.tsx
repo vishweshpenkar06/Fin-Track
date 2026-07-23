@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { TrendingUp, ArrowRight, Check, Loader2 } from 'lucide-react'
 import { addBudget } from '@/app/actions/budgets'
 import { updateUserCurrency } from '@/app/actions/settings'
+import { getCurrentMonth } from '@/lib/date-utils'
 import { CATEGORIES } from '@/lib/categories'
 
 export default function OnboardingPage() {
@@ -53,7 +54,7 @@ export default function OnboardingPage() {
         setLoading(true)
         setError('')
         
-        const currentMonth = new Date().toISOString().slice(0, 7)
+        const currentMonth = getCurrentMonth()
         await addBudget({
           category,
           limit: parseFloat(budget),

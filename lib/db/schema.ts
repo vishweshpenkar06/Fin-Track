@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, numeric, date, jsonb } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, boolean, numeric, date, jsonb, index } from 'drizzle-orm/pg-core'
 
 // --- Better Auth required tables -------------------------------------------
 // Column names are camelCase to match Better Auth's defaults. Do not rename.
@@ -79,7 +79,10 @@ export const expense = pgTable('expense', {
   receipt: text('receipt'),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
   updatedAt: timestamp('updatedAt').notNull().defaultNow(),
-})
+}, (table) => [
+  index('expense_userId_date_idx').on(table.userId, table.date),
+  index('expense_userId_category_idx').on(table.userId, table.category),
+])
 
 export const budget = pgTable('budget', {
   id: text('id').primaryKey(),
@@ -91,7 +94,9 @@ export const budget = pgTable('budget', {
   alerts: boolean('alerts').default(true),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
   updatedAt: timestamp('updatedAt').notNull().defaultNow(),
-})
+}, (table) => [
+  index('budget_userId_month_idx').on(table.userId, table.month),
+])
 
 export const income = pgTable('income', {
   id: text('id').primaryKey(),
@@ -102,4 +107,6 @@ export const income = pgTable('income', {
   description: text('description'),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
   updatedAt: timestamp('updatedAt').notNull().defaultNow(),
-})
+}, (table) => [
+  index('income_userId_date_idx').on(table.userId, table.date),
+])
