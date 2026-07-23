@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, Plus, Edit2, Trash2, Calendar } from 'lucide-react'
+import { Search, Plus, Edit2, Trash2, Calendar, Loader2 } from 'lucide-react'
 import { getExpenses, addExpense, updateExpense, deleteExpense } from '@/app/actions/expenses'
 import { CATEGORIES } from '@/lib/categories'
 
@@ -13,6 +13,8 @@ export default function ExpensesPage() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     description: '',
     amount: '',
@@ -45,6 +47,7 @@ export default function ExpensesPage() {
   const handleAddExpense = async () => {
     if (!formData.description || !formData.amount) return
 
+    setSaving(true)
     try {
       if (editingId) {
         await updateExpense(editingId, {
@@ -62,7 +65,7 @@ export default function ExpensesPage() {
           date: formData.date,
         })
       }
-      
+
       setShowAddModal(false)
       setFormData({
         description: '',
@@ -70,10 +73,12 @@ export default function ExpensesPage() {
         category: 'Groceries',
         date: new Date().toISOString().split('T')[0],
       })
-      
+
       await loadExpenses()
     } catch (error) {
       console.error('Failed to save expense:', error)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -91,11 +96,14 @@ export default function ExpensesPage() {
 
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this expense?')) {
+      setDeletingId(id)
       try {
         await deleteExpense(id)
         await loadExpenses()
       } catch (error) {
         console.error('Failed to delete expense:', error)
+      } finally {
+        setDeletingId(null)
       }
     }
   }
@@ -131,8 +139,10 @@ export default function ExpensesPage() {
       {/* Search & Filter */}
       <div className="card p-4 space-y-4">
         <div className="relative">
+          <label htmlFor="expense-search" className="sr-only">Search transactions</label>
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
           <input
+            id="expense-search"
             type="text"
             placeholder="Search transactions..."
             value={searchTerm}
@@ -142,12 +152,13 @@ export default function ExpensesPage() {
         </div>
 
         {/* Category Filter */}
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap" role="group" aria-label="Filter by category">
           {categoriesWithAll.map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              aria-pressed={selectedCategory === cat}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
                 selectedCategory === cat
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-input border border-border hover:border-primary/50'
@@ -190,15 +201,22 @@ export default function ExpensesPage() {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => handleEdit(exp)}
-                          className="p-2 hover:bg-card/50 rounded-lg transition-colors text-muted hover:text-foreground"
+                          aria-label={`Edit ${exp.description || exp.category}`}
+                          className="p-2 hover:bg-card/50 rounded-lg transition-colors text-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(exp.id)}
-                          className="p-2 hover:bg-card/50 rounded-lg transition-colors text-muted hover:text-destructive"
+                          disabled={deletingId === exp.id}
+                          aria-label={`Delete ${exp.description || exp.category}`}
+                          className="p-2 hover:bg-card/50 rounded-lg transition-colors text-muted hover:text-destructive disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          {deletingId === exp.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
                         </button>
                       </div>
                     </td>
@@ -216,7 +234,7 @@ export default function ExpensesPage() {
 
       {/* Add/Edit Expense Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={editingId ? 'Edit Expense' : 'Add Expense'}>
           <div className="card max-w-md w-full p-6 space-y-6">
             <div>
               <h2 className="text-2xl font-bold">{editingId ? 'Edit Expense' : 'Add Expense'}</h2>
@@ -287,14 +305,17 @@ export default function ExpensesPage() {
                   setShowAddModal(false)
                   setEditingId(null)
                 }}
-                className="flex-1 btn-secondary"
+                disabled={saving}
+                className="flex-1 btn-secondary disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddExpense}
-                className="flex-1 btn-primary"
+                disabled={saving}
+                className="flex-1 btn-primary disabled:opacity-50 inline-flex items-center justify-center gap-2"
               >
+                {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                 {editingId ? 'Update Expense' : 'Add Expense'}
               </button>
             </div>

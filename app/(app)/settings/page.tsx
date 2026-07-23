@@ -319,7 +319,7 @@ export default function SettingsPage() {
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Delete All Data">
           <div className="card max-w-md w-full p-6 space-y-6">
             <div>
               <h2 className="text-2xl font-bold">Delete All Data?</h2>

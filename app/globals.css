@@ -104,10 +104,10 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity;
+    @apply bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary;
   }
   .btn-secondary {
-    @apply border border-border bg-card text-foreground px-4 py-2 rounded-lg font-medium hover:bg-card/80 transition-colors;
+    @apply border border-border bg-card text-foreground px-4 py-2 rounded-lg font-medium hover:bg-card/80 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary;
   }
   .card {
     @apply bg-card text-card-foreground rounded-lg border border-border;

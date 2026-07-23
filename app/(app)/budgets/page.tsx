@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Edit2, Trash2, TrendingUp } from 'lucide-react'
+import { Plus, Edit2, Trash2, TrendingUp, Loader2 } from 'lucide-react'
 import { getBudgets, addBudget, updateBudget, deleteBudget } from '@/app/actions/budgets'
 import { CATEGORIES } from '@/lib/categories'
 import { getCurrentMonth } from '@/lib/date-utils'
@@ -32,6 +32,8 @@ export default function BudgetsPage() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     category: 'Groceries',
     limit: '',
@@ -57,6 +59,7 @@ export default function BudgetsPage() {
   const handleAddBudget = async () => {
     if (!formData.limit || !formData.category) return
 
+    setSaving(true)
     try {
       const currentMonth = getCurrentMonth()
 
@@ -82,6 +85,8 @@ export default function BudgetsPage() {
       await loadBudgets()
     } catch (error) {
       console.error('Failed to save budget:', error)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -97,11 +102,14 @@ export default function BudgetsPage() {
 
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this budget?')) {
+      setDeletingId(id)
       try {
         await deleteBudget(id)
         await loadBudgets()
       } catch (error) {
         console.error('Failed to delete budget:', error)
+      } finally {
+        setDeletingId(null)
       }
     }
   }
@@ -181,15 +189,23 @@ export default function BudgetsPage() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleEdit(budget)}
-                      className="p-2 hover:bg-card/50 rounded-lg transition-colors text-muted hover:text-foreground"
+                      disabled={deletingId === budget.id}
+                      aria-label={`Edit ${budget.category} budget`}
+                      className="p-2 hover:bg-card/50 rounded-lg transition-colors text-muted hover:text-foreground disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDelete(budget.id)}
-                      className="p-2 hover:bg-card/50 rounded-lg transition-colors text-muted hover:text-destructive"
+                      disabled={deletingId === budget.id}
+                      aria-label={`Delete ${budget.category} budget`}
+                      className="p-2 hover:bg-card/50 rounded-lg transition-colors text-muted hover:text-destructive disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      {deletingId === budget.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -207,7 +223,14 @@ export default function BudgetsPage() {
                     </div>
                   </div>
 
-                  <div className="w-full bg-input rounded-full h-3 overflow-hidden">
+                  <div
+                    className="w-full bg-input rounded-full h-3 overflow-hidden"
+                    role="progressbar"
+                    aria-valuenow={Math.round(percentage)}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`${budget.category} budget: ${percentage.toFixed(0)}% spent`}
+                  >
                     <div
                       className={`h-full transition-all ${
                         status === 'danger'
@@ -238,7 +261,7 @@ export default function BudgetsPage() {
 
       {/* Add/Edit Budget Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={editingId ? 'Edit Budget' : 'Create Budget'}>
           <div className="card max-w-md w-full p-6 space-y-6">
             <div>
               <h2 className="text-2xl font-bold">{editingId ? 'Edit Budget' : 'Create Budget'}</h2>
@@ -286,14 +309,17 @@ export default function BudgetsPage() {
                   setShowAddModal(false)
                   setEditingId(null)
                 }}
-                className="flex-1 btn-secondary"
+                disabled={saving}
+                className="flex-1 btn-secondary disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddBudget}
-                className="flex-1 btn-primary"
+                disabled={saving}
+                className="flex-1 btn-primary disabled:opacity-50 inline-flex items-center justify-center gap-2"
               >
+                {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                 {editingId ? 'Update Budget' : 'Create Budget'}
               </button>
             </div>
