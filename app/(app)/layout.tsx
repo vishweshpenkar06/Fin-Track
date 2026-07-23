@@ -107,7 +107,7 @@ export default function AppLayout({
           >
             <Menu className="w-6 h-6" />
           </button>
-          <div className="text-sm text-muted">Connected with Bank</div>
+          <div className="text-sm text-muted">FinTrack</div>
         </header>
 
         {/* Content */}
