@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { TrendingUp, BarChart3, Wallet, Settings, LogOut, Menu, X } from 'lucide-react'
 import { authClient } from '@/lib/auth-client'
+import ThemeToggle from '@/components/theme-toggle'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -107,7 +108,10 @@ export default function AppLayout({
           >
             <Menu className="w-6 h-6" />
           </button>
-          <div className="text-sm text-muted">FinTrack</div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted">FinTrack</span>
+            <ThemeToggle />
+          </div>
         </header>
 
         {/* Content */}

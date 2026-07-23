@@ -29,6 +29,7 @@ export default [
     },
     rules: {
       ...tsPlugin.configs.recommended.rules,
+      // TypeScript rules
       '@typescript-eslint/no-unused-vars': [
         'warn',
         {
@@ -37,7 +38,11 @@ export default [
         },
       ],
       '@typescript-eslint/no-explicit-any': 'warn',
+      // General rules
       'no-console': ['warn', { allow: ['warn', 'error', 'info'] }],
+      'eqeqeq': ['warn', 'always'],
+      'no-var': 'error',
+      'prefer-const': 'warn',
     },
   },
 ]

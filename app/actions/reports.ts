@@ -2,7 +2,7 @@
 
 import { db } from '@/lib/db'
 import { expense, income } from '@/lib/db/schema'
-import { and, eq, desc, gte, lte } from 'drizzle-orm'
+import { and, eq, gte, lte } from 'drizzle-orm'
 import { startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns'
 import { getUserId } from '@/lib/auth-utils'
 import { formatLocalDate } from '@/lib/date-utils'

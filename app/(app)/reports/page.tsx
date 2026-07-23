@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react'
 import { PieChart, Pie, Cell, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { Calendar } from 'lucide-react'
 import { getSpendingByCategory, getSpendingOverTime, getIncomeVsExpense, getCategoryBreakdown } from '@/app/actions/reports'
-import type { SpendingByCategory, SpendingOverTime, IncomeVsExpense } from '@/app/actions/reports'
-import { CHART_COLORS_HEX } from '@/lib/chart-colors'
+import { CHART_COLORS_HEX, TOOLTIP_STYLE } from '@/lib/chart-colors'
 
 interface CategoryBreakdownItem {
   category: string
@@ -168,7 +167,7 @@ export default function ReportsPage() {
                         labelLine={false}
                         label={(entry) => `${entry.name} $${entry.value.toFixed(0)}`}
                         outerRadius={100}
-                        fill="#4f8cff"
+                        fill={COLORS[0]}
                         dataKey="value"
                       >
                         {categoryData.map((entry, index) => (
@@ -176,12 +175,7 @@ export default function ReportsPage() {
                         ))}
                       </Pie>
                       <Tooltip
-                        contentStyle={{
-                          backgroundColor: '#181b20',
-                          border: '1px solid #2a2f37',
-                          borderRadius: '0.5rem',
-                          color: '#f5f6f7',
-                        }}
+                        contentStyle={TOOLTIP_STYLE}
                         formatter={(value) => `$${(value as number).toFixed(2)}`}
                       />
                     </PieChart>
@@ -199,25 +193,20 @@ export default function ReportsPage() {
                 <div className="h-80">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={trendData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#2a2f37" />
-                      <XAxis dataKey="date" stroke="#9aa1ab" style={{ fontSize: '12px' }} />
-                      <YAxis stroke="#9aa1ab" style={{ fontSize: '12px' }} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                      <XAxis dataKey="date" stroke="var(--muted)" style={{ fontSize: '12px' }} />
+                      <YAxis stroke="var(--muted)" style={{ fontSize: '12px' }} />
                       <Tooltip
-                        contentStyle={{
-                          backgroundColor: '#181b20',
-                          border: '1px solid #2a2f37',
-                          borderRadius: '0.5rem',
-                          color: '#f5f6f7',
-                        }}
+                        contentStyle={TOOLTIP_STYLE}
                         formatter={(value) => `$${(value as number).toFixed(2)}`}
                       />
                       <Legend />
                       <Line
                         type="monotone"
                         dataKey="spending"
-                        stroke="#ef4444"
+                        stroke="var(--destructive)"
                         strokeWidth={2}
-                        dot={{ fill: '#ef4444', r: 4 }}
+                        dot={{ fill: 'var(--destructive)', r: 4 }}
                         activeDot={{ r: 6 }}
                         name="Spending"
                       />
@@ -237,21 +226,16 @@ export default function ReportsPage() {
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={incomeExpenseData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#2a2f37" />
-                    <XAxis dataKey="category" stroke="#9aa1ab" style={{ fontSize: '12px' }} />
-                    <YAxis stroke="#9aa1ab" style={{ fontSize: '12px' }} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="category" stroke="var(--muted)" style={{ fontSize: '12px' }} />
+                    <YAxis stroke="var(--muted)" style={{ fontSize: '12px' }} />
                     <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#181b20',
-                        border: '1px solid #2a2f37',
-                        borderRadius: '0.5rem',
-                        color: '#f5f6f7',
-                      }}
+                      contentStyle={TOOLTIP_STYLE}
                       formatter={(value) => `$${(value as number).toFixed(2)}`}
                     />
                     <Legend />
-                    <Bar dataKey="income" fill="#22c55e" name="Income" radius={[8, 8, 0, 0]} />
-                    <Bar dataKey="expenses" fill="#ef4444" name="Expenses" radius={[8, 8, 0, 0]} />
+                    <Bar dataKey="income" fill="var(--secondary)" name="Income" radius={[8, 8, 0, 0]} />
+                    <Bar dataKey="expenses" fill="var(--destructive)" name="Expenses" radius={[8, 8, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

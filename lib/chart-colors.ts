@@ -23,3 +23,11 @@ export const CHART_COLORS_HEX = [
   '#f97316',
   '#a855f7',
 ]
+
+// Recharts tooltip styles using CSS variables for theme support
+export const TOOLTIP_STYLE = {
+  backgroundColor: 'var(--card)',
+  border: '1px solid var(--border)',
+  borderRadius: '0.5rem',
+  color: 'var(--card-foreground)',
+}
