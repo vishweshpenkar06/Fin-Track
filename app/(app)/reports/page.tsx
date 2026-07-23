@@ -5,6 +5,7 @@ import { PieChart, Pie, Cell, LineChart, Line, BarChart, Bar, XAxis, YAxis, Cart
 import { Calendar } from 'lucide-react'
 import { getSpendingByCategory, getSpendingOverTime, getIncomeVsExpense, getCategoryBreakdown } from '@/app/actions/reports'
 import type { SpendingByCategory, SpendingOverTime, IncomeVsExpense } from '@/app/actions/reports'
+import { CHART_COLORS_HEX } from '@/lib/chart-colors'
 
 interface CategoryBreakdownItem {
   category: string
@@ -29,7 +30,7 @@ interface IncomeExpenseBarItem {
   expenses: number
 }
 
-const COLORS = ['#4f8cff', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#a855f7']
+const COLORS = CHART_COLORS_HEX
 
 export default function ReportsPage() {
   const [categoryData, setCategoryData] = useState<PieDataItem[]>([])

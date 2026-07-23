@@ -221,14 +221,14 @@ export default function SettingsPage() {
         </div>
 
         <div className="space-y-3">
-          <button className="w-full flex items-center justify-between px-4 py-3 border border-border rounded-lg hover:border-primary/50 transition-colors opacity-60">
+          <div className="w-full flex items-center justify-between px-4 py-3 border border-border rounded-lg opacity-50">
             <span className="font-medium">Change Password</span>
-            <span className="text-primary text-sm">Coming soon</span>
-          </button>
-          <button className="w-full flex items-center justify-between px-4 py-3 border border-border rounded-lg hover:border-primary/50 transition-colors opacity-60">
+            <span className="text-muted text-sm">Managed via email</span>
+          </div>
+          <div className="w-full flex items-center justify-between px-4 py-3 border border-border rounded-lg opacity-50">
             <span className="font-medium">Two-Factor Authentication</span>
-            <span className="text-muted text-sm">Disabled</span>
-          </button>
+            <span className="text-muted text-sm">Not available yet</span>
+          </div>
         </div>
       </div>
 
