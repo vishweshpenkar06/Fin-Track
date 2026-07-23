@@ -4,18 +4,38 @@ import { useState, useEffect } from 'react'
 import { PieChart, Pie, Cell, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { Calendar } from 'lucide-react'
 import { getSpendingByCategory, getSpendingOverTime, getIncomeVsExpense, getCategoryBreakdown } from '@/app/actions/reports'
+import type { SpendingByCategory, SpendingOverTime, IncomeVsExpense } from '@/app/actions/reports'
+
+interface CategoryBreakdownItem {
+  category: string
+  amount: number
+  percentage: number
+}
+
+interface PieDataItem {
+  name: string
+  value: number
+}
+
+interface TrendDataItem {
+  date: string
+  spending: number
+  income: number
+}
+
+interface IncomeExpenseBarItem {
+  category: string
+  income: number
+  expenses: number
+}
 
 const COLORS = ['#4f8cff', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#a855f7']
 
 export default function ReportsPage() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [categoryData, setCategoryData] = useState<any[]>([])
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [trendData, setTrendData] = useState<any[]>([])
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [incomeExpenseData, setIncomeExpenseData] = useState<any[]>([])
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [breakdown, setBreakdown] = useState<any[]>([])
+  const [categoryData, setCategoryData] = useState<PieDataItem[]>([])
+  const [trendData, setTrendData] = useState<TrendDataItem[]>([])
+  const [incomeExpenseData, setIncomeExpenseData] = useState<IncomeExpenseBarItem[]>([])
+  const [breakdown, setBreakdown] = useState<CategoryBreakdownItem[]>([])
   const [period, setPeriod] = useState<'month' | 'year'>('month')
   const [loading, setLoading] = useState(true)
 
@@ -34,17 +54,15 @@ export default function ReportsPage() {
       ])
 
       setCategoryData(categoryRes.map(d => ({ name: d.category, value: d.amount })))
-      
+
       // Group trend data by week if showing month, otherwise by month
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const groupedTrend = trendRes.reduce((acc: any, item) => {
+      const groupedTrend = trendRes.reduce<TrendDataItem[]>((acc, item) => {
         const date = new Date(item.date)
-        const key = period === 'month' 
+        const key = period === 'month'
           ? `Week ${Math.ceil(date.getDate() / 7)}`
           : date.toLocaleString('default', { month: 'short' })
-        
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const existing = acc.find((d: any) => d.date === key)
+
+        const existing = acc.find((d) => d.date === key)
         if (existing) {
           existing.spending += item.amount
         } else {

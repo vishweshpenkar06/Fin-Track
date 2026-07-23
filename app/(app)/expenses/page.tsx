@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react'
 import { Search, Plus, Edit2, Trash2, Calendar, Loader2 } from 'lucide-react'
 import { getExpenses, addExpense, updateExpense, deleteExpense } from '@/app/actions/expenses'
 import { CATEGORIES } from '@/lib/categories'
+import type { Expense } from '@/lib/types'
 
 export default function ExpensesPage() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [expenses, setExpenses] = useState<any[]>([])
+  const [expenses, setExpenses] = useState<Expense[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [showAddModal, setShowAddModal] = useState(false)
@@ -82,11 +82,10 @@ export default function ExpensesPage() {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleEdit = (exp: any) => {
+  const handleEdit = (exp: Expense) => {
     setEditingId(exp.id)
     setFormData({
-      description: exp.description,
+      description: exp.description ?? '',
       amount: exp.amount.toString(),
       category: exp.category,
       date: exp.date,

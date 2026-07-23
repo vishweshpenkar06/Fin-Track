@@ -5,6 +5,7 @@ import { Plus, Edit2, Trash2, TrendingUp, Loader2 } from 'lucide-react'
 import { getBudgets, addBudget, updateBudget, deleteBudget } from '@/app/actions/budgets'
 import { CATEGORIES } from '@/lib/categories'
 import { getCurrentMonth } from '@/lib/date-utils'
+import type { Budget } from '@/lib/types'
 
 function getBudgetStatus(spent: number, limit: number) {
   const percentage = (spent / limit) * 100
@@ -27,8 +28,7 @@ function getStatusColor(status: string) {
 }
 
 export default function BudgetsPage() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [budgets, setBudgets] = useState<any[]>([])
+  const [budgets, setBudgets] = useState<Budget[]>([])
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -90,8 +90,7 @@ export default function BudgetsPage() {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleEdit = (budget: any) => {
+  const handleEdit = (budget: Budget) => {
     setEditingId(budget.id)
     setFormData({
       category: budget.category,
@@ -115,7 +114,7 @@ export default function BudgetsPage() {
   }
 
   const totalBudget = budgets.reduce((sum, b) => sum + parseFloat(b.limit), 0)
-  const totalSpent = budgets.reduce((sum, b) => sum + parseFloat(b.spent || 0), 0)
+  const totalSpent = budgets.reduce((sum, b) => sum + parseFloat(String(b.spent ?? '0')), 0)
   const budgetUtilization = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0
   const categoriesWithoutIncome = CATEGORIES.filter(c => c !== 'Income')
 
@@ -168,7 +167,7 @@ export default function BudgetsPage() {
           <div className="card p-12 text-center text-muted">Loading budgets...</div>
         ) : budgets.length > 0 ? (
           budgets.map((budget) => {
-            const spent = parseFloat(budget.spent || 0)
+            const spent = parseFloat(String(budget.spent ?? '0'))
             const limit = parseFloat(budget.limit)
             const { status, label } = getBudgetStatus(spent, limit)
             const percentage = (spent / limit) * 100
