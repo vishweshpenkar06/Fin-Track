@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    name: Lint, Type Check, Test, and Build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check with TypeScript
+        run: pnpm tsc --noEmit
+
+      - name: Run unit tests (Vitest)
+        run: pnpm test --run
+
+      - name: Build project
+        run: pnpm build
+
+  # E2E tests run separately because they require:
+  # 1. A real database connection (DATABASE_URL)
+  # 2. Real auth secret (BETTER_AUTH_SECRET)
+  # 3. Server startup time
+  # These are harder to set up in CI without secrets management,
+  # so E2E tests are optional and can be run locally or in a separate workflow
+  # with proper secret injection.
+  
+  e2e:
+    runs-on: ubuntu-latest
+    name: E2E Tests (Optional)
+    if: false  # Disabled by default - enable with proper secrets setup
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps
+
+      - name: Run E2E tests
+        run: pnpm test:e2e
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          BASE_URL: http://localhost:3000
