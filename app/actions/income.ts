@@ -1,11 +1,26 @@
 'use server'
 
+import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { income } from '@/lib/db/schema'
 import { and, eq, desc, gte, lte } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
+
+const addIncomeSchema = z.object({
+  amount: z.number().positive('Amount must be a positive number'),
+  source: z.string().min(1, 'Source is required').max(200, 'Source must be 200 characters or fewer'),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
+  description: z.string().max(500, 'Description must be 500 characters or fewer').optional(),
+})
+
+const updateIncomeSchema = z.object({
+  amount: z.number().positive('Amount must be a positive number').optional(),
+  source: z.string().min(1, 'Source is required').max(200, 'Source must be 200 characters or fewer').optional(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format').optional(),
+  description: z.string().max(500, 'Description must be 500 characters or fewer').optional(),
+})
 
 async function getUserId() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -39,20 +54,27 @@ export async function addIncome(data: {
   date: string
   description?: string
 }) {
+  const parsed = addIncomeSchema.safeParse(data)
+  if (!parsed.success) {
+    const errors = parsed.error.flatten().fieldErrors
+    const message = Object.values(errors).flat().join('; ')
+    throw new Error(message || 'Invalid income data')
+  }
+
   const userId = await getUserId()
-  
+
   const id = crypto.randomUUID()
   await db.insert(income).values({
     id,
     userId,
-    amount: data.amount.toString(),
-    source: data.source,
-    date: data.date,
-    description: data.description,
+    amount: parsed.data.amount.toString(),
+    source: parsed.data.source,
+    date: parsed.data.date,
+    description: parsed.data.description,
     createdAt: new Date(),
     updatedAt: new Date(),
   })
-  
+
   revalidatePath('/dashboard')
   return { id }
 }
@@ -66,17 +88,24 @@ export async function updateIncome(
     description?: string
   }
 ) {
+  const parsed = updateIncomeSchema.safeParse(data)
+  if (!parsed.success) {
+    const errors = parsed.error.flatten().fieldErrors
+    const message = Object.values(errors).flat().join('; ')
+    throw new Error(message || 'Invalid income data')
+  }
+
   const userId = await getUserId()
-  
+
   await db
     .update(income)
     .set({
-      ...data,
-      amount: data.amount?.toString(),
+      ...parsed.data,
+      amount: parsed.data.amount?.toString(),
       updatedAt: new Date(),
     })
     .where(and(eq(income.id, id), eq(income.userId, userId)))
-  
+
   revalidatePath('/dashboard')
 }
 

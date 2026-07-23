@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, numeric, date } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, boolean, numeric, date, jsonb } from 'drizzle-orm/pg-core'
 
 // --- Better Auth required tables -------------------------------------------
 // Column names are camelCase to match Better Auth's defaults. Do not rename.
@@ -9,6 +9,8 @@ export const user = pgTable('user', {
   email: text('email').notNull().unique(),
   emailVerified: boolean('emailVerified').notNull().default(false),
   image: text('image'),
+  currency: text('currency').default('USD'),
+  notificationPreferences: jsonb('notificationPreferences').default({ budgetAlerts: true, weeklySummary: true, aiInsights: false }),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
   updatedAt: timestamp('updatedAt').notNull().defaultNow(),
 })

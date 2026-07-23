@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Bell, Lock, Download, Trash2, LogOut, User, Loader2, AlertCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { getCurrentUser, deleteAllUserData } from '@/app/actions/settings'
+import { getCurrentUser, deleteAllUserData, updateNotificationPreferences, updateUserName } from '@/app/actions/settings'
 import { authClient } from '@/lib/auth-client'
 
 export default function SettingsPage() {
@@ -19,6 +19,11 @@ export default function SettingsPage() {
   const [formData, setFormData] = useState({
     name: '',
   })
+  const [notificationPrefs, setNotificationPrefs] = useState({
+    budgetAlerts: true,
+    weeklySummary: true,
+    aiInsights: false,
+  })
 
   useEffect(() => {
     loadUser()
@@ -32,6 +37,9 @@ export default function SettingsPage() {
       setFormData({
         name: userData.name || '',
       })
+      if (userData.notificationPreferences) {
+        setNotificationPrefs(userData.notificationPreferences as typeof notificationPrefs)
+      }
     } catch (err) {
       console.error('Failed to load user:', err)
     } finally {
@@ -45,14 +53,13 @@ export default function SettingsPage() {
       setError('')
       setSuccess('')
 
-      // Update user profile using Better Auth
-      // Note: Better Auth has limited profile update options in this simple setup
-      // Full user updates would require custom extensions
-      
+      await updateUserName(formData.name)
+
+      setUser((prev: typeof user) => prev ? { ...prev, name: formData.name } : prev)
       setSuccess('Profile updated successfully')
       setTimeout(() => setSuccess(''), 3000)
     } catch (err) {
-      setError('Failed to save changes')
+      setError(err instanceof Error ? err.message : 'Failed to save changes')
       console.error('Save error:', err)
     } finally {
       setIsSaving(false)
@@ -219,40 +226,32 @@ export default function SettingsPage() {
         </div>
 
         <div className="space-y-4">
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              defaultChecked
-              className="w-4 h-4 rounded border-border bg-input accent-primary"
-            />
-            <div>
-              <p className="font-medium text-sm">Budget Alerts</p>
-              <p className="text-muted text-xs">Get notified when you&apos;re close to your budget limits</p>
-            </div>
-          </label>
-
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              defaultChecked
-              className="w-4 h-4 rounded border-border bg-input accent-primary"
-            />
-            <div>
-              <p className="font-medium text-sm">Weekly Summary</p>
-              <p className="text-muted text-xs">Receive a weekly summary of your spending</p>
-            </div>
-          </label>
-
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              className="w-4 h-4 rounded border-border bg-input accent-primary"
-            />
-            <div>
-              <p className="font-medium text-sm">AI Insights</p>
-              <p className="text-muted text-xs">Get personalized spending insights and recommendations</p>
-            </div>
-          </label>
+          {([
+            { key: 'budgetAlerts' as const, label: 'Budget Alerts', desc: "Get notified when you're close to your budget limits" },
+            { key: 'weeklySummary' as const, label: 'Weekly Summary', desc: 'Receive a weekly summary of your spending' },
+            { key: 'aiInsights' as const, label: 'AI Insights', desc: 'Get personalized spending insights and recommendations' },
+          ]).map(({ key, label, desc }) => (
+            <label key={key} className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={notificationPrefs[key]}
+                onChange={async (e) => {
+                  const updated = { ...notificationPrefs, [key]: e.target.checked }
+                  setNotificationPrefs(updated)
+                  try {
+                    await updateNotificationPreferences({ [key]: e.target.checked })
+                  } catch (err) {
+                    console.error('Failed to save notification preference:', err)
+                  }
+                }}
+                className="w-4 h-4 rounded border-border bg-input accent-primary"
+              />
+              <div>
+                <p className="font-medium text-sm">{label}</p>
+                <p className="text-muted text-xs">{desc}</p>
+              </div>
+            </label>
+          ))}
         </div>
       </div>
 

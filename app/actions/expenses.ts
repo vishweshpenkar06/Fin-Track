@@ -1,5 +1,6 @@
 'use server'
 
+import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { expense } from '@/lib/db/schema'
@@ -7,6 +8,27 @@ import { and, eq, desc, gte, lte } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { parseISO } from 'date-fns'
+import { CATEGORIES } from '@/lib/categories'
+
+const EXPENSE_CATEGORIES = CATEGORIES.filter(c => c !== 'Income') as unknown as [string, ...string[]]
+
+const addExpenseSchema = z.object({
+  amount: z.number().positive('Amount must be a positive number'),
+  category: z.enum(EXPENSE_CATEGORIES, { message: 'Invalid category' }),
+  description: z.string().max(500, 'Description must be 500 characters or fewer').optional(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
+  paymentMethod: z.string().max(50).optional(),
+  receipt: z.string().max(2000).optional(),
+})
+
+const updateExpenseSchema = z.object({
+  amount: z.number().positive('Amount must be a positive number').optional(),
+  category: z.enum(EXPENSE_CATEGORIES, { message: 'Invalid category' }).optional(),
+  description: z.string().max(500, 'Description must be 500 characters or fewer').optional(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format').optional(),
+  paymentMethod: z.string().max(50).optional(),
+  receipt: z.string().max(2000).optional(),
+})
 
 async function getUserId() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -46,22 +68,29 @@ export async function addExpense(data: {
   paymentMethod?: string
   receipt?: string
 }) {
+  const parsed = addExpenseSchema.safeParse(data)
+  if (!parsed.success) {
+    const errors = parsed.error.flatten().fieldErrors
+    const message = Object.values(errors).flat().join('; ')
+    throw new Error(message || 'Invalid expense data')
+  }
+
   const userId = await getUserId()
-  
+
   const id = crypto.randomUUID()
   await db.insert(expense).values({
     id,
     userId,
-    amount: data.amount.toString(),
-    category: data.category,
-    description: data.description,
-    date: data.date,
-    paymentMethod: data.paymentMethod || 'cash',
-    receipt: data.receipt,
+    amount: parsed.data.amount.toString(),
+    category: parsed.data.category,
+    description: parsed.data.description,
+    date: parsed.data.date,
+    paymentMethod: parsed.data.paymentMethod || 'cash',
+    receipt: parsed.data.receipt,
     createdAt: new Date(),
     updatedAt: new Date(),
   })
-  
+
   revalidatePath('/expenses')
   revalidatePath('/dashboard')
   return { id }
@@ -78,17 +107,24 @@ export async function updateExpense(
     receipt?: string
   }
 ) {
+  const parsed = updateExpenseSchema.safeParse(data)
+  if (!parsed.success) {
+    const errors = parsed.error.flatten().fieldErrors
+    const message = Object.values(errors).flat().join('; ')
+    throw new Error(message || 'Invalid expense data')
+  }
+
   const userId = await getUserId()
-  
+
   await db
     .update(expense)
     .set({
-      ...data,
-      amount: data.amount?.toString(),
+      ...parsed.data,
+      amount: parsed.data.amount?.toString(),
       updatedAt: new Date(),
     })
     .where(and(eq(expense.id, id), eq(expense.userId, userId)))
-  
+
   revalidatePath('/expenses')
   revalidatePath('/dashboard')
 }

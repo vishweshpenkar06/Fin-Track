@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { TrendingUp, ArrowRight, Check, Loader2 } from 'lucide-react'
 import { addBudget } from '@/app/actions/budgets'
+import { updateUserCurrency } from '@/app/actions/settings'
 import { CATEGORIES } from '@/lib/categories'
 
 export default function OnboardingPage() {
@@ -16,7 +17,14 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    if (step === 2) {
+      try {
+        await updateUserCurrency(currency)
+      } catch (err) {
+        console.error('Failed to save currency:', err)
+      }
+    }
     if (step < 3) {
       setStep(step + 1)
     } else {
@@ -24,7 +32,14 @@ export default function OnboardingPage() {
     }
   }
 
-  const handleSkip = () => {
+  const handleSkip = async () => {
+    if (step === 2) {
+      try {
+        await updateUserCurrency(currency)
+      } catch (err) {
+        console.error('Failed to save currency:', err)
+      }
+    }
     if (step < 3) {
       setStep(step + 1)
     } else {

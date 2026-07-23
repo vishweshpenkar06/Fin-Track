@@ -2,7 +2,7 @@
 
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { expense, budget, income } from '@/lib/db/schema'
+import { expense, budget, income, user } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
@@ -16,7 +16,36 @@ async function getUserId() {
 export async function getCurrentUser() {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session?.user) throw new Error('Unauthorized')
-  return session.user
+  const [row] = await db.select().from(user).where(eq(user.id, session.user.id)).limit(1)
+  return row ?? session.user
+}
+
+export async function updateUserCurrency(currency: string) {
+  const userId = await getUserId()
+  await db.update(user).set({ currency, updatedAt: new Date() }).where(eq(user.id, userId))
+  revalidatePath('/dashboard')
+  revalidatePath('/reports')
+  revalidatePath('/settings')
+}
+
+export async function updateUserName(name: string) {
+  if (!name.trim()) throw new Error('Name is required')
+  const userId = await getUserId()
+  await auth.api.updateUser({ body: { name: name.trim() }, headers: await headers() })
+  revalidatePath('/dashboard')
+  revalidatePath('/settings')
+}
+
+export async function updateNotificationPreferences(prefs: {
+  budgetAlerts?: boolean
+  weeklySummary?: boolean
+  aiInsights?: boolean
+}) {
+  const userId = await getUserId()
+  const [current] = await db.select({ notificationPreferences: user.notificationPreferences }).from(user).where(eq(user.id, userId)).limit(1)
+  const merged = { ...(current?.notificationPreferences as Record<string, boolean> ?? {}), ...prefs }
+  await db.update(user).set({ notificationPreferences: merged, updatedAt: new Date() }).where(eq(user.id, userId))
+  revalidatePath('/settings')
 }
 
 export async function deleteAllUserData() {
