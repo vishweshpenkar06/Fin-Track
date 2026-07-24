@@ -4,18 +4,38 @@ import { useState, useEffect } from 'react'
 import { PieChart, Pie, Cell, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { Calendar } from 'lucide-react'
 import { getSpendingByCategory, getSpendingOverTime, getIncomeVsExpense, getCategoryBreakdown } from '@/app/actions/reports'
+import { CHART_COLORS_HEX, TOOLTIP_STYLE } from '@/lib/chart-colors'
 
-const COLORS = ['#4f8cff', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#a855f7']
+interface CategoryBreakdownItem {
+  category: string
+  amount: number
+  percentage: number
+}
+
+interface PieDataItem {
+  name: string
+  value: number
+}
+
+interface TrendDataItem {
+  date: string
+  spending: number
+  income: number
+}
+
+interface IncomeExpenseBarItem {
+  category: string
+  income: number
+  expenses: number
+}
+
+const COLORS = CHART_COLORS_HEX
 
 export default function ReportsPage() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [categoryData, setCategoryData] = useState<any[]>([])
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [trendData, setTrendData] = useState<any[]>([])
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [incomeExpenseData, setIncomeExpenseData] = useState<any[]>([])
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [breakdown, setBreakdown] = useState<any[]>([])
+  const [categoryData, setCategoryData] = useState<PieDataItem[]>([])
+  const [trendData, setTrendData] = useState<TrendDataItem[]>([])
+  const [incomeExpenseData, setIncomeExpenseData] = useState<IncomeExpenseBarItem[]>([])
+  const [breakdown, setBreakdown] = useState<CategoryBreakdownItem[]>([])
   const [period, setPeriod] = useState<'month' | 'year'>('month')
   const [loading, setLoading] = useState(true)
 
@@ -34,17 +54,15 @@ export default function ReportsPage() {
       ])
 
       setCategoryData(categoryRes.map(d => ({ name: d.category, value: d.amount })))
-      
+
       // Group trend data by week if showing month, otherwise by month
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const groupedTrend = trendRes.reduce((acc: any, item) => {
+      const groupedTrend = trendRes.reduce<TrendDataItem[]>((acc, item) => {
         const date = new Date(item.date)
-        const key = period === 'month' 
+        const key = period === 'month'
           ? `Week ${Math.ceil(date.getDate() / 7)}`
           : date.toLocaleString('default', { month: 'short' })
-        
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const existing = acc.find((d: any) => d.date === key)
+
+        const existing = acc.find((d) => d.date === key)
         if (existing) {
           existing.spending += item.amount
         } else {
@@ -149,7 +167,7 @@ export default function ReportsPage() {
                         labelLine={false}
                         label={(entry) => `${entry.name} $${entry.value.toFixed(0)}`}
                         outerRadius={100}
-                        fill="#4f8cff"
+                        fill={COLORS[0]}
                         dataKey="value"
                       >
                         {categoryData.map((entry, index) => (
@@ -157,12 +175,7 @@ export default function ReportsPage() {
                         ))}
                       </Pie>
                       <Tooltip
-                        contentStyle={{
-                          backgroundColor: '#181b20',
-                          border: '1px solid #2a2f37',
-                          borderRadius: '0.5rem',
-                          color: '#f5f6f7',
-                        }}
+                        contentStyle={TOOLTIP_STYLE}
                         formatter={(value) => `$${(value as number).toFixed(2)}`}
                       />
                     </PieChart>
@@ -180,25 +193,20 @@ export default function ReportsPage() {
                 <div className="h-80">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={trendData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#2a2f37" />
-                      <XAxis dataKey="date" stroke="#9aa1ab" style={{ fontSize: '12px' }} />
-                      <YAxis stroke="#9aa1ab" style={{ fontSize: '12px' }} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                      <XAxis dataKey="date" stroke="var(--muted)" style={{ fontSize: '12px' }} />
+                      <YAxis stroke="var(--muted)" style={{ fontSize: '12px' }} />
                       <Tooltip
-                        contentStyle={{
-                          backgroundColor: '#181b20',
-                          border: '1px solid #2a2f37',
-                          borderRadius: '0.5rem',
-                          color: '#f5f6f7',
-                        }}
+                        contentStyle={TOOLTIP_STYLE}
                         formatter={(value) => `$${(value as number).toFixed(2)}`}
                       />
                       <Legend />
                       <Line
                         type="monotone"
                         dataKey="spending"
-                        stroke="#ef4444"
+                        stroke="var(--destructive)"
                         strokeWidth={2}
-                        dot={{ fill: '#ef4444', r: 4 }}
+                        dot={{ fill: 'var(--destructive)', r: 4 }}
                         activeDot={{ r: 6 }}
                         name="Spending"
                       />
@@ -218,21 +226,16 @@ export default function ReportsPage() {
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={incomeExpenseData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#2a2f37" />
-                    <XAxis dataKey="category" stroke="#9aa1ab" style={{ fontSize: '12px' }} />
-                    <YAxis stroke="#9aa1ab" style={{ fontSize: '12px' }} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="category" stroke="var(--muted)" style={{ fontSize: '12px' }} />
+                    <YAxis stroke="var(--muted)" style={{ fontSize: '12px' }} />
                     <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#181b20',
-                        border: '1px solid #2a2f37',
-                        borderRadius: '0.5rem',
-                        color: '#f5f6f7',
-                      }}
+                      contentStyle={TOOLTIP_STYLE}
                       formatter={(value) => `$${(value as number).toFixed(2)}`}
                     />
                     <Legend />
-                    <Bar dataKey="income" fill="#22c55e" name="Income" radius={[8, 8, 0, 0]} />
-                    <Bar dataKey="expenses" fill="#ef4444" name="Expenses" radius={[8, 8, 0, 0]} />
+                    <Bar dataKey="income" fill="var(--secondary)" name="Income" radius={[8, 8, 0, 0]} />
+                    <Bar dataKey="expenses" fill="var(--destructive)" name="Expenses" radius={[8, 8, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

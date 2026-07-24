@@ -1,17 +1,11 @@
 'use server'
 
-import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { expense, income } from '@/lib/db/schema'
-import { eq } from 'drizzle-orm'
-import { headers } from 'next/headers'
+import { and, eq, gte, lte } from 'drizzle-orm'
 import { startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns'
-
-async function getUserId() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) throw new Error('Unauthorized')
-  return session.user.id
-}
+import { getUserId } from '@/lib/auth-utils'
+import { formatLocalDate } from '@/lib/date-utils'
 
 export interface SpendingByCategory {
   category: string
@@ -29,39 +23,40 @@ export interface IncomeVsExpense {
   expense: number
 }
 
+function getDateRange(period: 'month' | 'year') {
+  const now = new Date()
+  const start = period === 'month' ? startOfMonth(now) : startOfYear(now)
+  const end = period === 'month' ? endOfMonth(now) : endOfYear(now)
+  return {
+    startDate: formatLocalDate(start),
+    endDate: formatLocalDate(end),
+  }
+}
+
 export async function getSpendingByCategory(period: 'month' | 'year' = 'month'): Promise<SpendingByCategory[]> {
   const userId = await getUserId()
-  
-  let startDate, endDate
-  const now = new Date()
-  
-  if (period === 'month') {
-    startDate = startOfMonth(now)
-    endDate = endOfMonth(now)
-  } else {
-    startDate = startOfYear(now)
-    endDate = endOfYear(now)
-  }
-  
+  const { startDate, endDate } = getDateRange(period)
+
   const expenses = await db
     .select()
     .from(expense)
-    .where(eq(expense.userId, userId))
-  
-  const filtered = expenses.filter(e => {
-    const expDate = new Date(e.date)
-    return expDate >= startDate && expDate <= endDate
-  })
-  
+    .where(
+      and(
+        eq(expense.userId, userId),
+        gte(expense.date, startDate),
+        lte(expense.date, endDate)
+      )
+    )
+
   const byCategory: Record<string, number> = {}
-  
-  filtered.forEach(exp => {
+
+  for (const exp of expenses) {
     if (exp.category !== 'Income') {
       const amount = parseFloat(exp.amount)
       byCategory[exp.category] = (byCategory[exp.category] || 0) + amount
     }
-  })
-  
+  }
+
   return Object.entries(byCategory).map(([category, amount]) => ({
     category,
     amount,
@@ -70,80 +65,60 @@ export async function getSpendingByCategory(period: 'month' | 'year' = 'month'):
 
 export async function getSpendingOverTime(period: 'month' | 'year' = 'month'): Promise<SpendingOverTime[]> {
   const userId = await getUserId()
-  
-  let startDate, endDate
-  const now = new Date()
-  
-  if (period === 'month') {
-    startDate = startOfMonth(now)
-    endDate = endOfMonth(now)
-  } else {
-    startDate = startOfYear(now)
-    endDate = endOfYear(now)
-  }
-  
+  const { startDate, endDate } = getDateRange(period)
+
   const expenses = await db
     .select()
     .from(expense)
-    .where(eq(expense.userId, userId))
-  
-  const filtered = expenses.filter(e => {
-    const expDate = new Date(e.date)
-    return expDate >= startDate && expDate <= endDate && e.category !== 'Income'
-  })
-  
+    .where(
+      and(
+        eq(expense.userId, userId),
+        gte(expense.date, startDate),
+        lte(expense.date, endDate)
+      )
+    )
+
   const byDate: Record<string, number> = {}
-  
-  filtered.forEach(exp => {
-    const amount = parseFloat(exp.amount)
-    byDate[exp.date] = (byDate[exp.date] || 0) + amount
-  })
-  
+
+  for (const exp of expenses) {
+    if (exp.category !== 'Income') {
+      const amount = parseFloat(exp.amount)
+      byDate[exp.date] = (byDate[exp.date] || 0) + amount
+    }
+  }
+
   return Object.entries(byDate)
-    .map(([date, amount]) => ({
-      date,
-      amount,
-    }))
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .map(([date, amount]) => ({ date, amount }))
+    .sort((a, b) => a.date.localeCompare(b.date))
 }
 
 export async function getIncomeVsExpense(period: 'month' | 'year' = 'month'): Promise<IncomeVsExpense[]> {
   const userId = await getUserId()
-  
-  let startDate, endDate
+  const { startDate, endDate } = getDateRange(period)
+
+  const [expenses, incomes] = await Promise.all([
+    db.select().from(expense).where(
+      and(
+        eq(expense.userId, userId),
+        gte(expense.date, startDate),
+        lte(expense.date, endDate)
+      )
+    ),
+    db.select().from(income).where(
+      and(
+        eq(income.userId, userId),
+        gte(income.date, startDate),
+        lte(income.date, endDate)
+      )
+    ),
+  ])
+
+  const totalExpense = expenses
+    .filter(e => e.category !== 'Income')
+    .reduce((sum, e) => sum + parseFloat(e.amount), 0)
+  const totalIncome = incomes.reduce((sum, i) => sum + parseFloat(i.amount), 0)
+
   const now = new Date()
-  
-  if (period === 'month') {
-    startDate = startOfMonth(now)
-    endDate = endOfMonth(now)
-  } else {
-    startDate = startOfYear(now)
-    endDate = endOfYear(now)
-  }
-  
-  const expenses = await db
-    .select()
-    .from(expense)
-    .where(eq(expense.userId, userId))
-  
-  const incomes = await db
-    .select()
-    .from(income)
-    .where(eq(income.userId, userId))
-  
-  const filteredExpenses = expenses.filter(e => {
-    const expDate = new Date(e.date)
-    return expDate >= startDate && expDate <= endDate && e.category !== 'Income'
-  })
-  
-  const filteredIncomes = incomes.filter(i => {
-    const incDate = new Date(i.date)
-    return incDate >= startDate && incDate <= endDate
-  })
-  
-  const totalExpense = filteredExpenses.reduce((sum, e) => sum + parseFloat(e.amount), 0)
-  const totalIncome = filteredIncomes.reduce((sum, i) => sum + parseFloat(i.amount), 0)
-  
   return [
     {
       period: period === 'month' ? now.toLocaleString('default', { month: 'long', year: 'numeric' }) : now.getFullYear().toString(),
@@ -155,37 +130,30 @@ export async function getIncomeVsExpense(period: 'month' | 'year' = 'month'): Pr
 
 export async function getCategoryBreakdown(period: 'month' | 'year' = 'month'): Promise<Array<{ category: string; amount: number; percentage: number }>> {
   const userId = await getUserId()
-  
-  let startDate, endDate
-  const now = new Date()
-  
-  if (period === 'month') {
-    startDate = startOfMonth(now)
-    endDate = endOfMonth(now)
-  } else {
-    startDate = startOfYear(now)
-    endDate = endOfYear(now)
-  }
-  
+  const { startDate, endDate } = getDateRange(period)
+
   const expenses = await db
     .select()
     .from(expense)
-    .where(eq(expense.userId, userId))
-  
-  const filtered = expenses.filter(e => {
-    const expDate = new Date(e.date)
-    return expDate >= startDate && expDate <= endDate && e.category !== 'Income'
-  })
-  
+    .where(
+      and(
+        eq(expense.userId, userId),
+        gte(expense.date, startDate),
+        lte(expense.date, endDate)
+      )
+    )
+
   const byCategory: Record<string, number> = {}
   let total = 0
-  
-  filtered.forEach(exp => {
-    const amount = parseFloat(exp.amount)
-    byCategory[exp.category] = (byCategory[exp.category] || 0) + amount
-    total += amount
-  })
-  
+
+  for (const exp of expenses) {
+    if (exp.category !== 'Income') {
+      const amount = parseFloat(exp.amount)
+      byCategory[exp.category] = (byCategory[exp.category] || 0) + amount
+      total += amount
+    }
+  }
+
   return Object.entries(byCategory)
     .map(([category, amount]) => ({
       category,

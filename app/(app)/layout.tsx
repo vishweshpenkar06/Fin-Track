@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { TrendingUp, BarChart3, Wallet, Settings, LogOut, Menu, X } from 'lucide-react'
 import { authClient } from '@/lib/auth-client'
+import ThemeToggle from '@/components/theme-toggle'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -40,7 +41,11 @@ export default function AppLayout({
             </div>
             <span className="font-semibold">FinTrack</span>
           </Link>
-          <button onClick={() => setSidebarOpen(false)} className="md:hidden">
+          <button
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Close sidebar"
+            className="md:hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -98,11 +103,15 @@ export default function AppLayout({
         <header className="border-b border-border bg-card/50 sticky top-0 z-40 px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between md:justify-end">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="md:hidden text-muted hover:text-foreground transition-colors"
+            aria-label="Open sidebar"
+            className="md:hidden text-muted hover:text-foreground transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             <Menu className="w-6 h-6" />
           </button>
-          <div className="text-sm text-muted">Connected with Bank</div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted">FinTrack</span>
+            <ThemeToggle />
+          </div>
         </header>
 
         {/* Content */}

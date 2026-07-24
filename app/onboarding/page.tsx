@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { TrendingUp, ArrowRight, Check, Loader2 } from 'lucide-react'
 import { addBudget } from '@/app/actions/budgets'
+import { updateUserCurrency } from '@/app/actions/settings'
+import { getCurrentMonth } from '@/lib/date-utils'
 import { CATEGORIES } from '@/lib/categories'
 
 export default function OnboardingPage() {
@@ -16,35 +18,45 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const handleNext = () => {
-    if (step < 3) {
+  const handleNext = async () => {
+    if (step === 1) {
+      try {
+        await updateUserCurrency(currency)
+      } catch (err) {
+        console.error('Failed to save currency:', err)
+      }
+    }
+    if (step < 2) {
       setStep(step + 1)
     } else {
       handleCreateBudgetAndRedirect()
     }
   }
 
-  const handleSkip = () => {
-    if (step < 3) {
-      setStep(step + 1)
-    } else {
-      router.push('/dashboard')
+  const handleSkip = async () => {
+    if (step === 1) {
+      try {
+        await updateUserCurrency(currency)
+      } catch (err) {
+        console.error('Failed to save currency:', err)
+      }
     }
+    router.push('/dashboard')
   }
 
   const handleCreateBudgetAndRedirect = async () => {
-    if (step === 3 && budget) {
+    if (step === 2 && budget) {
       try {
         setLoading(true)
         setError('')
-        
-        const currentMonth = new Date().toISOString().slice(0, 7)
+
+        const currentMonth = getCurrentMonth()
         await addBudget({
           category,
           limit: parseFloat(budget),
           month: currentMonth,
         })
-        
+
         router.push('/dashboard')
       } catch (err) {
         setError('Failed to create budget. Please try again.')
@@ -72,7 +84,7 @@ export default function OnboardingPage() {
       {/* Progress */}
       <div className="px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex gap-2 max-w-md">
-          {[1, 2, 3].map((s) => (
+          {[1, 2].map((s) => (
             <div
               key={s}
               className={`flex-1 h-1 rounded-full transition-colors ${
@@ -88,23 +100,6 @@ export default function OnboardingPage() {
         <div className="w-full max-w-md">
           <div className="card p-8 space-y-6">
             {step === 1 && (
-              <>
-                <div>
-                  <h1 className="text-2xl font-bold">Link Your Bank</h1>
-                  <p className="text-muted text-sm mt-1">Connect your bank account for automatic transaction tracking</p>
-                </div>
-                <div className="space-y-3">
-                  <div className="border-2 border-dashed border-border rounded-lg p-8 text-center space-y-2 hover:border-primary/50 transition-colors cursor-pointer opacity-60">
-                    <div className="text-4xl">🏦</div>
-                    <p className="font-medium">Bank linking coming soon</p>
-                    <p className="text-muted text-sm">Plaid integration in progress</p>
-                  </div>
-                  <p className="text-muted text-xs text-center">For now, manually add transactions in the Expenses page</p>
-                </div>
-              </>
-            )}
-
-            {step === 2 && (
               <>
                 <div>
                   <h1 className="text-2xl font-bold">Set Your Currency</h1>
@@ -129,11 +124,11 @@ export default function OnboardingPage() {
               </>
             )}
 
-            {step === 3 && (
+            {step === 2 && (
               <>
                 <div>
                   <h1 className="text-2xl font-bold">Create Your First Budget</h1>
-                  <p className="text-muted text-sm mt-1">Set a monthly budget for a spending category</p>
+                  <p className="text-muted text-sm mt-1">Set a monthly budget for a spending category (optional)</p>
                 </div>
                 <div className="space-y-4">
                   {error && (
@@ -142,8 +137,9 @@ export default function OnboardingPage() {
                     </div>
                   )}
                   <div>
-                    <label className="block text-sm font-medium mb-2">Category</label>
+                    <label htmlFor="onboarding-category" className="block text-sm font-medium mb-2">Category</label>
                     <select
+                      id="onboarding-category"
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
                       className="w-full px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
@@ -156,10 +152,11 @@ export default function OnboardingPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Monthly Budget Limit</label>
+                    <label htmlFor="onboarding-budget" className="block text-sm font-medium mb-2">Monthly Budget Limit</label>
                     <div className="flex items-center">
                       <span className="text-muted mr-2">{currency}</span>
                       <input
+                        id="onboarding-budget"
                         type="number"
                         value={budget}
                         onChange={(e) => setBudget(e.target.value)}
@@ -180,12 +177,12 @@ export default function OnboardingPage() {
                 className="flex-1 btn-secondary disabled:opacity-50"
                 disabled={loading}
               >
-                {step === 3 ? 'Skip' : 'Skip'}
+                {step === 2 ? 'Skip' : 'Skip'}
               </button>
               <button
                 onClick={handleNext}
                 className="flex-1 btn-primary inline-flex items-center justify-center gap-2 disabled:opacity-50"
-                disabled={loading || (step === 3 && !budget)}
+                disabled={loading || (step === 2 && !budget)}
               >
                 {loading ? (
                   <>
@@ -194,7 +191,7 @@ export default function OnboardingPage() {
                   </>
                 ) : (
                   <>
-                    {step === 3 ? 'Get Started' : 'Next'}
+                    {step === 2 ? 'Get Started' : 'Next'}
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}

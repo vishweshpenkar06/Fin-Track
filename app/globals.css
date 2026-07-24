@@ -50,6 +50,46 @@
 }
 
 :root {
+  color-scheme: light;
+  /* FinTrack Light Mode Palette */
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --secondary: #16a34a;
+  --secondary-foreground: #ffffff;
+  --muted: #94a3b8;
+  --muted-foreground: #64748b;
+  --accent: #2563eb;
+  --accent-foreground: #ffffff;
+  --destructive: #dc2626;
+  --border: #e2e8f0;
+  --input: #f1f5f9;
+  --ring: #2563eb;
+  --chart-1: #2563eb;
+  --chart-2: #16a34a;
+  --chart-3: #d97706;
+  --chart-4: #7c3aed;
+  --chart-5: #db2777;
+  --radius: 0.5rem;
+  --budget-success: #16a34a;
+  --budget-warning: #d97706;
+  --budget-danger: #dc2626;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #2563eb;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #16a34a;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #2563eb;
+}
+
+.dark {
   color-scheme: dark;
   /* FinTrack Dark Mode Palette */
   --background: #0b0e11;
@@ -100,14 +140,17 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-semibold;
   }
+  button {
+    @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary;
+  }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity;
+    @apply bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary;
   }
   .btn-secondary {
-    @apply border border-border bg-card text-foreground px-4 py-2 rounded-lg font-medium hover:bg-card/80 transition-colors;
+    @apply border border-border bg-card text-foreground px-4 py-2 rounded-lg font-medium hover:bg-card/80 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary;
   }
   .card {
     @apply bg-card text-card-foreground rounded-lg border border-border;

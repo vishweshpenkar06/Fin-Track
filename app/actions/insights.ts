@@ -1,10 +1,10 @@
 'use server'
 
-import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { expense, budget } from '@/lib/db/schema'
 import { and, eq, gte, lt } from 'drizzle-orm'
-import { headers } from 'next/headers'
+import { getUserId } from '@/lib/auth-utils'
+import { formatLocalDate } from '@/lib/date-utils'
 
 interface Insight {
   type: 'spending' | 'budget-suggestion' | 'anomaly'
@@ -13,19 +13,6 @@ interface Insight {
   category?: string
   amount?: number
   severity: 'info' | 'warning' | 'alert'
-}
-
-async function getUserId() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) throw new Error('Unauthorized')
-  return session.user.id
-}
-
-function formatLocalDate(date: Date): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
 }
 
 function getMonthDateRange(monthsAgo = 0) {
@@ -76,20 +63,18 @@ export async function generateInsights(): Promise<Insight[]> {
   const currentByCategory: Record<string, number> = {}
   const lastByCategory: Record<string, number> = {}
 
-  currentMonthExpenses.forEach((exp) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const amount = parseFloat(exp.amount as any)
+  for (const exp of currentMonthExpenses) {
+    const amount = parseFloat(exp.amount)
     currentByCategory[exp.category] = (currentByCategory[exp.category] || 0) + amount
-  })
+  }
 
-  lastMonthExpenses.forEach((exp) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const amount = parseFloat(exp.amount as any)
+  for (const exp of lastMonthExpenses) {
+    const amount = parseFloat(exp.amount)
     lastByCategory[exp.category] = (lastByCategory[exp.category] || 0) + amount
-  })
+  }
 
   // Check for significant increases (>20%)
-  Object.entries(currentByCategory).forEach(([category, currentAmount]) => {
+  for (const [category, currentAmount] of Object.entries(currentByCategory)) {
     const lastAmount = lastByCategory[category] || 0
     if (lastAmount > 0) {
       const percentChange = ((currentAmount - lastAmount) / lastAmount) * 100
@@ -104,7 +89,7 @@ export async function generateInsights(): Promise<Insight[]> {
         })
       }
     }
-  })
+  }
 
   // 2. Budget Recommendations - Suggest budget if category has 3+ expenses but no budget
   const budgets = await db
@@ -116,17 +101,16 @@ export async function generateInsights(): Promise<Insight[]> {
 
   // Group current month expenses by category to find ones with 3+ expenses
   const categoryExpenseCount: Record<string, { count: number; total: number }> = {}
-  currentMonthExpenses.forEach((exp) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const amount = parseFloat(exp.amount as any)
+  for (const exp of currentMonthExpenses) {
+    const amount = parseFloat(exp.amount)
     if (!categoryExpenseCount[exp.category]) {
       categoryExpenseCount[exp.category] = { count: 0, total: 0 }
     }
     categoryExpenseCount[exp.category].count++
     categoryExpenseCount[exp.category].total += amount
-  })
+  }
 
-  Object.entries(categoryExpenseCount).forEach(([category, { count, total }]) => {
+  for (const [category, { count, total }] of Object.entries(categoryExpenseCount)) {
     if (count >= 3 && !budgetedCategories.has(category)) {
       const avgMonthlySpend = total / count
       const suggestedBudget = Math.round(avgMonthlySpend * 1.1 / 10) * 10 // Round to nearest 10
@@ -139,28 +123,26 @@ export async function generateInsights(): Promise<Insight[]> {
         severity: 'info',
       })
     }
-  })
+  }
 
   // 3. Anomaly Detection - Flag expenses >3x category average
   const categoryStats: Record<string, { sum: number; count: number; avg: number }> = {}
 
-  currentMonthExpenses.forEach((exp) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const amount = parseFloat(exp.amount as any)
+  for (const exp of currentMonthExpenses) {
+    const amount = parseFloat(exp.amount)
     if (!categoryStats[exp.category]) {
       categoryStats[exp.category] = { sum: 0, count: 0, avg: 0 }
     }
     categoryStats[exp.category].sum += amount
     categoryStats[exp.category].count++
-  })
+  }
 
-  Object.keys(categoryStats).forEach((cat) => {
+  for (const cat of Object.keys(categoryStats)) {
     categoryStats[cat].avg = categoryStats[cat].sum / categoryStats[cat].count
-  })
+  }
 
-  currentMonthExpenses.forEach((exp) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const amount = parseFloat(exp.amount as any)
+  for (const exp of currentMonthExpenses) {
+    const amount = parseFloat(exp.amount)
     const stats = categoryStats[exp.category]
     if (stats && amount > stats.avg * 3) {
       insights.push({
@@ -172,7 +154,7 @@ export async function generateInsights(): Promise<Insight[]> {
         severity: 'alert',
       })
     }
-  })
+  }
 
   return insights
 }
