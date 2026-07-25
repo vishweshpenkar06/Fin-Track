@@ -1,6 +1,6 @@
 # FinTrack — Complete Project Reference
 
-> Generated from comprehensive analysis and 7 batches of fixes (31 total changes).
+> Generated from comprehensive analysis and 7 batches of fixes (31 total changes) + Google Auth.
 > For Claude Code or any AI coding assistant working on this project.
 
 ---
@@ -22,7 +22,7 @@
 | **Icons** | Lucide React | 1.16.0 | UI icons |
 | **Charts** | Recharts | 3.9.2 | Data visualization |
 | **Backend** | Next.js Server Actions | — | Business logic |
-| **Auth** | Better Auth | 1.6.23 | Email/password sessions |
+| **Auth** | Better Auth | 1.6.23 | Email/password + Google OAuth sessions |
 | **Database** | Neon PostgreSQL | — | Data persistence |
 | **ORM** | Drizzle ORM | 0.45.2 | Type-safe queries |
 | **Validation** | Zod | 4.4.3 | Input validation |
@@ -82,6 +82,7 @@ fintrack/
 │   └── error.tsx                 # Global error boundary
 ├── components/
 │   ├── auth-form.tsx             # Shared sign-in/up form
+│   ├── google-sign-in.tsx        # Google OAuth sign-in button
 │   ├── error-boundary.tsx        # Reusable error UI component
 │   ├── theme-toggle.tsx          # Light/dark mode toggle
 │   └── ui/button.tsx             # shadcn button component
@@ -156,11 +157,13 @@ fintrack/
 |----------|----------|-------------|
 | `DATABASE_URL` | Yes | PostgreSQL connection string (Neon pooled URL) |
 | `BETTER_AUTH_SECRET` | Yes | Auth secret (min 32 chars, generate with `openssl rand -base64 32`) |
+| `GOOGLE_CLIENT_ID` | Yes | Google OAuth Client ID (from Google Cloud Console) |
+| `GOOGLE_CLIENT_SECRET` | Yes | Google OAuth Client Secret (from Google Cloud Console) |
 | `BETTER_AUTH_URL` | No | Base URL for auth (auto-detected from Vercel env vars) |
 | `VERCEL_URL` | Auto | Set by Vercel deployment |
 | `VERCEL_PROJECT_PRODUCTION_URL` | Auto | Set by Vercel deployment |
 
-**Both `DATABASE_URL` and `BETTER_AUTH_SECRET` throw clear errors if missing** — no silent fallbacks.
+**`DATABASE_URL`, `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, and `GOOGLE_CLIENT_SECRET` throw clear errors if missing** — no silent fallbacks.
 
 ---
 
@@ -241,7 +244,9 @@ pnpm test:e2e         # E2E tests (Playwright)
 
 | File | Purpose | Notes |
 |------|---------|-------|
-| `lib/auth.ts` | Better Auth config | Throws if `BETTER_AUTH_SECRET` missing |
+| `lib/auth.ts` | Better Auth config | Email + Google OAuth, throws if secrets missing |
+| `lib/auth-client.ts` | Better Auth client | Exposes `signIn`, `signUp`, `signOut`, `useSession` |
+| `components/google-sign-in.tsx` | Google OAuth button | Social sign-in with Google logo |
 | `lib/db/index.ts` | DB connection | Throws if `DATABASE_URL` missing |
 | `lib/db/schema.ts` | All database tables | Includes indexes |
 | `lib/auth-utils.ts` | Shared `getUserId()` | Server-only (imports `next/headers`) |
@@ -343,17 +348,25 @@ export default function Page() {
 - No password change flow (shows "Managed via email" in settings)
 - `pnpm.overrides` removed from package.json (pnpm v11 ignores it)
 
+## Google OAuth Setup
+
+- Credentials stored in `.env.local` (not committed to git)
+- Callback URL: `http://localhost:3000/api/auth/callback/google` (local) / `https://your-domain.vercel.app/api/auth/callback/google` (production)
+- Accounts stored in existing `account` table with `providerId: 'google'`
+- Google sign-in button appears on both login and signup pages
+
 ---
 
 ## Deployment
 
-1. Set `DATABASE_URL` and `BETTER_AUTH_SECRET` in Vercel env vars
+1. Set `DATABASE_URL`, `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, and `GOOGLE_CLIENT_SECRET` in Vercel env vars
 2. Connect Neon integration in Vercel
-3. Push to GitHub or run `vercel --prod`
-4. Schema auto-creates on first request (no migrations needed)
+3. Add production callback URL to Google Cloud Console OAuth settings
+4. Push to GitHub or run `vercel --prod`
+5. Schema auto-creates on first request (no migrations needed)
 
 ---
 
-*Last updated: 2026-07-23*
-*Total changes: 31 fixes across 7 batches*
+*Last updated: 2026-07-25*
+*Total changes: 31 fixes across 7 batches + Google OAuth*
 *Test count: 80 tests, 6 test files*
