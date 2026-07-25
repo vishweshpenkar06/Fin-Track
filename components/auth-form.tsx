@@ -36,7 +36,7 @@ export default function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4" suppressHydrationWarning>
       {error && (
         <div className="flex gap-3 bg-destructive/10 border border-destructive/30 rounded-lg p-3">
           <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
@@ -53,6 +53,7 @@ export default function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
             onChange={(e) => setName(e.target.value)}
             required
             autoComplete="name"
+            suppressHydrationWarning
             className="w-full px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
             placeholder="John Doe"
           />
@@ -67,6 +68,7 @@ export default function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
           onChange={(e) => setEmail(e.target.value)}
           required
           autoComplete="email"
+          suppressHydrationWarning
           className="w-full px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
           placeholder="you@example.com"
         />
@@ -81,6 +83,7 @@ export default function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
           required
           minLength={8}
           autoComplete={isSignUp ? 'new-password' : 'current-password'}
+          suppressHydrationWarning
           className="w-full px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
           placeholder="••••••••"
         />
@@ -89,6 +92,7 @@ export default function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
       <button
         type="submit"
         disabled={loading}
+        suppressHydrationWarning
         className="btn-primary w-full flex items-center justify-center gap-2"
       >
         {loading && <Loader2 className="w-4 h-4 animate-spin" />}

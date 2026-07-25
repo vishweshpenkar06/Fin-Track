@@ -26,6 +26,7 @@ export default function GoogleSignIn() {
     <button
       onClick={handleGoogleSignIn}
       disabled={loading}
+      suppressHydrationWarning
       className="w-full flex items-center justify-center gap-3 px-4 py-2 border border-border rounded-lg font-medium hover:bg-card/80 transition-colors disabled:opacity-50"
     >
       {loading ? (
