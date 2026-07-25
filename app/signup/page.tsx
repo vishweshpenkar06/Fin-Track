@@ -6,6 +6,7 @@ import { headers } from 'next/headers'
 import Link from 'next/link'
 import { TrendingUp } from 'lucide-react'
 import AuthForm from '@/components/auth-form'
+import GoogleSignIn from '@/components/google-sign-in'
 
 export default async function SignupPage() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -33,6 +34,17 @@ export default async function SignupPage() {
             </div>
 
             <AuthForm mode="sign-up" />
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted">or</span>
+              </div>
+            </div>
+
+            <GoogleSignIn />
 
             <div className="text-center text-sm">
               <span className="text-muted">Already have an account? </span>
