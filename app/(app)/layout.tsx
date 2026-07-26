@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { TrendingUp, BarChart3, Wallet, Settings, LogOut, Menu, X, Target } from 'lucide-react'
+import { TrendingUp, BarChart3, Wallet, Settings, LogOut, Menu, X, Target, Sparkles } from 'lucide-react'
 import { authClient } from '@/lib/auth-client'
 import ThemeToggle from '@/components/theme-toggle'
 
@@ -12,6 +12,7 @@ const navItems = [
   { href: '/expenses', label: 'Expenses', icon: Wallet },
   { href: '/budgets', label: 'Budgets', icon: TrendingUp },
   { href: '/goals', label: 'Goals', icon: Target },
+  { href: '/insights', label: 'AI Insights', icon: Sparkles },
   { href: '/reports', label: 'Reports', icon: BarChart3 },
 ]
 
