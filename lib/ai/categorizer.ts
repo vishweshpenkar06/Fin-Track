@@ -2,16 +2,16 @@
 // No external API needed — uses pattern matching
 
 const CATEGORY_KEYWORDS: Record<string, string[]> = {
-  'Dining': ['restaurant', 'food', 'coffee', 'starbucks', 'mcdonald', 'pizza', 'burger', 'sushi', 'cafe', 'diner', 'lunch', 'dinner', 'breakfast', 'meal', 'eat', 'takeout', 'delivery', 'doordash', 'ubereats', 'grubhub'],
+  'Dining': ['restaurant', 'food', 'coffee', 'starbucks', 'mcdonald', 'pizza', 'burger', 'sushi', 'cafe', 'diner', 'lunch', 'dinner', 'breakfast', 'meal', 'eat', 'takeout', 'delivery', 'doordash', 'ubereats', 'uber eats', 'grubhub'],
   'Groceries': ['grocery', 'walmart', 'target', 'costco', 'whole foods', 'trader joe', 'aldi', 'kroger', 'safeway', 'publix', 'market', 'supermarket', 'produce', 'meat', 'dairy'],
-  'Transport': ['uber', 'lyft', 'gas', 'fuel', 'oil change', 'tire', 'parking', 'toll', 'transit', 'metro', 'bus', 'train', 'airline', 'flight', 'rental car', 'car wash'],
-  'Entertainment': ['netflix', 'spotify', 'hulu', 'disney', 'movie', 'concert', 'ticket', 'game', 'steam', 'playstation', 'xbox', 'nintendo', 'book', 'kindle', 'audible'],
-  'Utilities': ['electric', 'electricity', 'gas bill', 'water', 'internet', 'wifi', 'phone', 'mobile', 'verizon', 'att', 't-mobile', 'comcast', 'utility'],
+  'Transport': ['uber ride', 'lyft ride', 'gas', 'fuel', 'oil change', 'tire', 'parking', 'toll', 'transit', 'metro', 'bus pass', 'train', 'airline', 'flight', 'rental car', 'car wash'],
+  'Entertainment': ['netflix', 'spotify', 'hulu', 'disney plus', 'movie', 'concert', 'ticket', 'game', 'steam', 'playstation', 'xbox', 'nintendo', 'book', 'kindle', 'audible'],
+  'Utilities': ['electric', 'electricity', 'gas bill', 'water bill', 'internet', 'wifi', 'phone bill', 'mobile', 'verizon', 'att', 't-mobile', 'comcast', 'utility'],
   'Rent': ['rent', 'lease', 'apartment', 'mortgage', 'housing'],
   'Healthcare': ['doctor', 'hospital', 'pharmacy', 'cvs', 'walgreen', 'medical', 'dental', 'vision', 'insurance', 'health'],
-  'Shopping': ['amazon', 'ebay', 'etsy', 'clothing', 'shoes', 'electronics', 'apple', 'best buy', 'target'],
-  'Education': ['tuition', 'school', 'university', 'course', 'udemy', 'coursera', 'book', 'textbook', 'supplies'],
-  'Subscriptions': ['subscription', 'membership', 'gym', 'fitness', 'premium', 'pro plan', 'annual'],
+  'Shopping': ['amazon', 'ebay', 'etsy', 'clothing', 'shoes', 'electronics', 'apple store', 'best buy'],
+  'Education': ['tuition', 'school', 'university', 'course', 'udemy', 'coursera', 'textbook', 'supplies'],
+  'Subscriptions': ['membership', 'gym', 'fitness', 'pro plan', 'annual fee'],
   'Income': ['salary', 'paycheck', 'direct deposit', 'freelance', 'payment received', 'dividend', 'interest earned'],
 }
 
