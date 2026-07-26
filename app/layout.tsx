@@ -1,6 +1,7 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import { ToastProvider } from '@/components/toast'
 
 export const metadata: Metadata = {
   title: 'FinTrack - Track Your Money',
@@ -14,6 +15,7 @@ export const metadata: Metadata = {
       },
     ],
   },
+  manifest: '/manifest.json',
 }
 
 export const viewport: Viewport = {
@@ -43,7 +45,9 @@ export default function RootLayout({
             `,
           }}
         />
-        {children}
+        <ToastProvider>
+          {children}
+        </ToastProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

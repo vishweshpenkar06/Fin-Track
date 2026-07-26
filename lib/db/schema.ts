@@ -56,18 +56,7 @@ export const verification = pgTable('verification', {
 })
 
 // --- App tables ------------------------------------------------------------
-// Add your app tables below. Always include a plain `userId` column so queries
-// can be scoped per user — the security model depends on this column existing,
-// not on a foreign key. Do NOT add a foreign key constraint
-// (`.references(() => user.id, ...)`) unless the user explicitly asks for
-// foreign keys or referential integrity; FK constraints make iterating on the
-// schema harder.
-//
-// Example:
-//
-// import { serial } from "drizzle-orm/pg-core"
-//
-// FinTrack tables
+
 export const expense = pgTable('expense', {
   id: text('id').primaryKey(),
   userId: text('userId').notNull(),
@@ -77,6 +66,9 @@ export const expense = pgTable('expense', {
   date: date('date').notNull(),
   paymentMethod: text('paymentMethod').default('cash'),
   receipt: text('receipt'),
+  isRecurring: boolean('isRecurring').default(false),
+  recurringFrequency: text('recurringFrequency'), // daily, weekly, monthly, yearly
+  recurringEndDate: date('recurringEndDate'),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
   updatedAt: timestamp('updatedAt').notNull().defaultNow(),
 }, (table) => [
@@ -105,8 +97,26 @@ export const income = pgTable('income', {
   source: text('source').notNull(),
   date: date('date').notNull(),
   description: text('description'),
+  isRecurring: boolean('isRecurring').default(false),
+  recurringFrequency: text('recurringFrequency'),
+  recurringEndDate: date('recurringEndDate'),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
   updatedAt: timestamp('updatedAt').notNull().defaultNow(),
 }, (table) => [
   index('income_userId_date_idx').on(table.userId, table.date),
+])
+
+// New: Financial goals
+export const goal = pgTable('goal', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  name: text('name').notNull(),
+  targetAmount: numeric('targetAmount').notNull(),
+  currentAmount: numeric('currentAmount').default('0'),
+  deadline: date('deadline'),
+  category: text('category'),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+}, (table) => [
+  index('goal_userId_idx').on(table.userId),
 ])
