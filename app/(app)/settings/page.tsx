@@ -246,14 +246,15 @@ export default function SettingsPage() {
 
         <div className="space-y-4">
           {([
-            { key: 'budgetAlerts' as const, label: 'Budget Alerts', desc: "Get notified when you're close to your budget limits" },
-            { key: 'weeklySummary' as const, label: 'Weekly Summary', desc: 'Receive a weekly summary of your spending' },
-            { key: 'aiInsights' as const, label: 'AI Insights', desc: 'Get personalized spending insights and recommendations' },
-          ]).map(({ key, label, desc }) => (
-            <label key={key} className="flex items-center gap-3 cursor-pointer">
+            { key: 'budgetAlerts' as const, label: 'Budget Alerts', desc: "Get notified when you're close to your budget limits", comingSoon: true },
+            { key: 'weeklySummary' as const, label: 'Weekly Summary', desc: 'Receive a weekly summary of your spending', comingSoon: false },
+            { key: 'aiInsights' as const, label: 'AI Insights', desc: 'Get personalized spending insights and recommendations', comingSoon: true },
+          ]).map(({ key, label, desc, comingSoon }) => (
+            <label key={key} className={`flex items-center gap-3 ${comingSoon ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
               <input
                 type="checkbox"
                 checked={notificationPrefs[key]}
+                disabled={comingSoon}
                 onChange={async (e) => {
                   const updated = { ...notificationPrefs, [key]: e.target.checked }
                   setNotificationPrefs(updated)
@@ -266,7 +267,7 @@ export default function SettingsPage() {
                 className="w-4 h-4 rounded border-border bg-input accent-primary"
               />
               <div>
-                <p className="font-medium text-sm">{label}</p>
+                <p className="font-medium text-sm">{label} {comingSoon && <span className="text-xs text-muted">(Coming soon)</span>}</p>
                 <p className="text-muted text-xs">{desc}</p>
               </div>
             </label>

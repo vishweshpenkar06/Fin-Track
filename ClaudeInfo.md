@@ -1,6 +1,6 @@
 # FinTrack — Complete Project Reference
 
-> Generated from comprehensive analysis and 7 batches of fixes (31 total changes) + Google Auth.
+> Generated from comprehensive analysis and 8 batches of fixes (35+ total changes) + Google Auth + new features.
 > For Claude Code or any AI coding assistant working on this project.
 
 ---
@@ -26,6 +26,7 @@
 | **Database** | Neon PostgreSQL | — | Data persistence |
 | **ORM** | Drizzle ORM | 0.45.2 | Type-safe queries |
 | **Validation** | Zod | 4.4.3 | Input validation |
+| **Email** | Resend | 6.20.0 | Weekly summary emails |
 | **Testing** | Vitest + Playwright | 4.1.10 / 1.61.1 | Unit & E2E tests |
 | **Linting** | ESLint | 10.7.0 | Code quality |
 | **TypeScript** | TypeScript | 5.7.3 | Type safety |
@@ -160,6 +161,8 @@ fintrack/
 | `GOOGLE_CLIENT_ID` | Yes | Google OAuth Client ID (from Google Cloud Console) |
 | `GOOGLE_CLIENT_SECRET` | Yes | Google OAuth Client Secret (from Google Cloud Console) |
 | `BETTER_AUTH_URL` | No | Base URL for auth (auto-detected from Vercel env vars) |
+| `RESEND_API_KEY` | Yes | Resend API key for weekly summary emails (get from resend.com) |
+| `CRON_SECRET` | Yes | Secret for protecting cron endpoints (generate with `openssl rand -base64 32`) |
 | `VERCEL_URL` | Auto | Set by Vercel deployment |
 | `VERCEL_PROJECT_PRODUCTION_URL` | Auto | Set by Vercel deployment |
 
@@ -238,6 +241,14 @@ pnpm test:e2e         # E2E tests (Playwright)
 30. **Stricter ESLint** — Added `eqeqeq`, `no-var`, `prefer-const` rules. Fixed 4 unused imports
 31. **Tooltip/chart theming** — Replaced all hardcoded hex colors with CSS variables, added `TOOLTIP_STYLE` to `chart-colors.ts`
 
+### Batch 8: Weekly Summary Emails, Command Palette, Sparklines, System Theme (4 features)
+
+32. **Weekly summary emails** — Created `lib/email.ts` with Resend integration, `app/api/cron/weekly-summary/route.ts` for Vercel Cron (runs Monday 9am), `vercel.json` for cron config, updated `.env.example` with `RESEND_API_KEY` and `CRON_SECRET`
+33. **Notification preferences fix** — Marked budgetAlerts and aiInsights as "Coming soon" (disabled) since they're no-ops; enabled weeklySummary now that it's wired to email service
+34. **Command palette** — Created `components/command-palette.tsx` with Cmd/Ctrl+K shortcut for quick navigation between Dashboard/Expenses/Budgets/Goals/Reports/Settings
+35. **Dashboard sparklines** — Created `components/sparkline.tsx` and `components/summary-cards.tsx` with mini trend lines on balance/income/expense cards showing 6-month history
+36. **System theme option** — Updated `components/theme-toggle.tsx` to support Light/Dark/System (follows OS preference via prefers-color-scheme)
+
 ---
 
 ## Key Files to Know
@@ -254,6 +265,14 @@ pnpm test:e2e         # E2E tests (Playwright)
 | `lib/types.ts` | Shared TypeScript interfaces | Expense, Budget, Income, Transaction |
 | `lib/chart-colors.ts` | Chart color palette + tooltip styles | Theme-aware |
 | `lib/categories.ts` | Category constants + colors | Used by expenses and budgets |
+| `lib/ai/categorizer.ts` | Category suggestion logic | Used by addExpense, addIncome |
+| `lib/ai/predictor.ts` | Spending predictions & anomalies | Used by getAIInsights |
+| `lib/email.ts` | Resend email utilities | Weekly summary emails |
+| `components/command-palette.tsx` | Cmd/Ctrl+K command palette | Quick navigation |
+| `components/sparkline.tsx` | Mini trend line component | Dashboard cards |
+| `components/summary-cards.tsx` | Dashboard summary cards | With sparklines |
+| `app/api/cron/weekly-summary/route.ts` | Cron endpoint for weekly emails | Protected by CRON_SECRET |
+| `vercel.json` | Vercel cron configuration | Weekly email schedule |
 | `app/actions/*.ts` | Server actions | All use Zod validation, getUserId() |
 | `app/globals.css` | Theme variables | Light + dark mode, button focus styles |
 | `next.config.mjs` | Next.js config + security headers | X-Frame-Options, HSTS, etc. |
@@ -262,7 +281,7 @@ pnpm test:e2e         # E2E tests (Playwright)
 
 ## Testing
 
-**80 tests** across 6 test files:
+**130 tests** across 11 test files:
 
 | File | Tests | Coverage |
 |------|-------|----------|
@@ -272,6 +291,10 @@ pnpm test:e2e         # E2E tests (Playwright)
 | `income.test.ts` | 12 | Income calculations, balance, date filtering, aggregation |
 | `validation.test.ts` | 16 | Zod schemas for expense/budget/income |
 | `server-actions.test.ts` | 11 | Auth, DB patterns, data shapes, revalidation, errors |
+| `ai-categorizer.test.ts` | 15 | Category suggestion, confidence scoring |
+| `ai-predictor.test.ts` | 13 | Spending predictions, anomaly detection, budget recommendations |
+| `goals.test.ts` | 8 | Progress calculations, deadline calculations, savings rate |
+| `toast.test.ts` | 3 | Toast display logic, auto-dismiss, stacking |
 
 ---
 
@@ -367,6 +390,6 @@ export default function Page() {
 
 ---
 
-*Last updated: 2026-07-25*
-*Total changes: 31 fixes across 7 batches + Google OAuth*
-*Test count: 80 tests, 6 test files*
+*Last updated: 2026-08-15*
+*Total changes: 36 fixes across 8 batches + Google Auth + weekly summary emails*
+*Test count: 130 tests, 11 test files*

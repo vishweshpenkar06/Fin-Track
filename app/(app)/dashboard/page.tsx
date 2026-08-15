@@ -4,18 +4,24 @@ import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import Link from 'next/link'
-import { TrendingUp, ArrowUpRight, ArrowDownLeft, Lightbulb, AlertTriangle } from 'lucide-react'
+import { Lightbulb, AlertTriangle } from 'lucide-react'
 import { getExpenses } from '@/app/actions/expenses'
 import { getBudgets } from '@/app/actions/budgets'
 import { getIncome, getTotalIncome } from '@/app/actions/income'
 import { generateInsights } from '@/app/actions/insights'
 import { getCurrentMonth, formatLocalDate } from '@/lib/date-utils'
-import { startOfMonth } from 'date-fns'
+import { startOfMonth, subMonths } from 'date-fns'
+import SummaryCards from '@/components/summary-cards'
+import { db } from '@/lib/db'
+import { expense, income } from '@/lib/db/schema'
+import { eq, and, gte, lte } from 'drizzle-orm'
+import { getUserId } from '@/lib/auth-utils'
 
 export default async function DashboardPage() {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session?.user) redirect('/login')
 
+  const userId = await getUserId()
   const currentMonth = getCurrentMonth()
   const monthStart = formatLocalDate(startOfMonth(new Date()))
 
@@ -29,6 +35,33 @@ export default async function DashboardPage() {
   // Calculate totals
   const totalExpenses = expenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0)
   const balance = totalIncome - totalExpenses
+
+  // Get trend data for last 6 months for sparklines
+  const trendData: number[] = []
+  const incomeTrend: number[] = []
+  const expenseTrend: number[] = []
+
+  for (let i = 5; i >= 0; i--) {
+    const monthDate = subMonths(new Date(), i)
+    const m = formatLocalDate(monthDate).slice(0, 7)
+    const mStart = `${m}-01`
+    const mEnd = formatLocalDate(new Date(parseInt(m.split('-')[0]), parseInt(m.split('-')[1]), 0))
+
+    const [monthExpenses, monthIncomes] = await Promise.all([
+      db.select().from(expense).where(
+        and(eq(expense.userId, userId), gte(expense.date, mStart), lte(expense.date, mEnd))
+      ),
+      db.select().from(income).where(
+        and(eq(income.userId, userId), gte(income.date, mStart), lte(income.date, mEnd))
+      ),
+    ])
+
+    const mIncome = monthIncomes.reduce((sum, i) => sum + parseFloat(i.amount), 0)
+    const mExpense = monthExpenses.reduce((sum, e) => sum + parseFloat(e.amount), 0)
+    incomeTrend.push(mIncome)
+    expenseTrend.push(mExpense)
+    trendData.push(mIncome - mExpense)
+  }
 
   // Get recent transactions from fetched data
   const allTransactions = [
@@ -68,43 +101,13 @@ export default async function DashboardPage() {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid sm:grid-cols-3 gap-6">
-        {/* Balance Card */}
-        <div className="card p-6 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-muted text-sm font-medium">Total Balance</span>
-            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-primary" />
-            </div>
-          </div>
-          <div className="text-3xl font-bold">${balance.toFixed(2)}</div>
-          <p className="text-xs text-muted">Income - Expenses</p>
-        </div>
-
-        {/* Income Card */}
-        <div className="card p-6 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-muted text-sm font-medium">Total Income</span>
-            <div className="w-10 h-10 bg-secondary/10 rounded-lg flex items-center justify-center">
-              <ArrowDownLeft className="w-5 h-5 text-secondary" />
-            </div>
-          </div>
-          <div className="text-3xl font-bold text-secondary">${totalIncome.toFixed(2)}</div>
-          <p className="text-xs text-muted">{incomes.length} sources</p>
-        </div>
-
-        {/* Expenses Card */}
-        <div className="card p-6 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-muted text-sm font-medium">Total Expenses</span>
-            <div className="w-10 h-10 bg-destructive/10 rounded-lg flex items-center justify-center">
-              <ArrowUpRight className="w-5 h-5 text-destructive" />
-            </div>
-          </div>
-          <div className="text-3xl font-bold text-destructive">${totalExpenses.toFixed(2)}</div>
-          <p className="text-xs text-muted">{expenses.length} transactions</p>
-        </div>
-      </div>
+      <SummaryCards
+        balance={balance}
+        totalIncome={totalIncome}
+        totalExpenses={totalExpenses}
+        incomeTrend={incomeTrend}
+        expenseTrend={expenseTrend}
+      />
 
       {/* Budget Overview */}
       <div className="space-y-4">

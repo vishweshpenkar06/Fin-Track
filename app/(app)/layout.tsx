@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { TrendingUp, BarChart3, Wallet, Settings, LogOut, Menu, X, Target, Sparkles } from 'lucide-react'
 import { authClient } from '@/lib/auth-client'
 import ThemeToggle from '@/components/theme-toggle'
+import CommandPalette from '@/components/command-palette'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -33,6 +34,7 @@ export default function AppLayout({
 
   return (
     <div className="min-h-screen bg-background text-foreground flex">
+      <CommandPalette />
       {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border flex flex-col transition-all ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:static md:z-0`}>
         {/* Logo */}
@@ -111,6 +113,13 @@ export default function AppLayout({
             <Menu className="w-6 h-6" />
           </button>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
+              className="hidden md:flex items-center gap-2 px-3 py-1.5 text-sm text-muted hover:text-foreground border border-border rounded-lg hover:bg-card/50 transition-colors"
+            >
+              <span>Search</span>
+              <kbd className="text-xs bg-input px-1.5 py-0.5 rounded">⌘K</kbd>
+            </button>
             <span className="text-sm text-muted">FinTrack</span>
             <ThemeToggle />
           </div>
